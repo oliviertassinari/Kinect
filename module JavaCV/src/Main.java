@@ -15,6 +15,7 @@ public class Main
     public static void main(String[] args) throws Exception
     {
     	OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test1.mkv");
+    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test2.mpg");
 		grabber.start();
 
 		IplImage imageGrab = grabber.grab();
@@ -128,36 +129,37 @@ public class Main
 			
 			timeBegin = System.currentTimeMillis();
 			
-			imageTraitement = IplImage.create(width, height, IPL_DEPTH_8U, 1); 
-         	cv2CvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
- //       	cvCvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
+			imageTraitement = IplImage.create(width, height, IPL_DEPTH_8U, 1);
+//        	cv2CvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
+        	cvCvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
+
+//        	cv2LUT(imageTraitement, imageTraitement);
+
 //         	cv2Smooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
         	cvSmooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
-        	cv2MinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
- //       	cvMinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
-        	cv2Threshold(imageTraitement, imageTraitement, minVal[0] + 15, 255, CV_THRESH_BINARY);
-  //      	cvThreshold(imageTraitement, imageTraitement, minVal[0] + 15, 255, CV_THRESH_BINARY);
+//        	cv2MinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
+        	cvMinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
+//        	cv2Threshold(imageTraitement, imageTraitement, minVal[0] + 15, 255, CV_THRESH_BINARY);
+        	cvThreshold(imageTraitement, imageTraitement, minVal[0] + 15, 255, CV_THRESH_BINARY);
 
 
         	cvCircle(imageGrab, minPoint, 3, CvScalar.YELLOW, -1, 8, 0);
 
         	contour = new CvSeq();
-  //      	cvFindContours(imageTraitement.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
-        	contour = cv3FindContours(imageTraitement, storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+         	cvFindContours(imageTraitement.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+ //       	contour = cv3FindContours(imageTraitement, storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 
             while(contour != null && !contour.isNull())
             {
             	if(contour.elem_size() > 0)
                 {
-                	//double aire = cvContourArea(contour, CV_WHOLE_SEQ, 0);
-                	double aire = cv2ContourArea(contour, CV_WHOLE_SEQ, 0);
+                	double aire = cvContourArea(contour, CV_WHOLE_SEQ, 0);
+ //               	double aire = cv2ContourArea(contour, CV_WHOLE_SEQ, 0);
 
-        	    	System.out.println(aire+"->"+contour.total());
-
-                	if(aire > 50 && aire < 10000)
+                	if(aire > 50 && aire < 100000)
                 	{
-                		//cvDrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
-	                	cv2DrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
+                		cvDrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
+//	                	cv2DrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
  
                 	    CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.015, 0);
                 		cvDrawContours(imageGrab, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
@@ -168,35 +170,27 @@ public class Main
                 		CvPoint centre1 = getContourCenter1(convex, storage);
                 		cvCircle(imageGrab, centre1, 3, CvScalar.RED, -1, 8, 0);
 
-                		//panneau3.add((cvGet2D(frame, centre1.y(), centre1.x()).getVal(0)));
-
-
-                		/*CvPoint[] coordonne = new CvPoint[points.total()];
-
-                		for(int i = 0; i < points.total(); i++)
+                		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
+                		CvSeq defect = cvConvexityDefects(contour, hull, storage);
+ 
+                		while(defect != null)
                 		{
-                			coordonne[i] = new CvPoint(cvGetSeqElem(points, i));
+                    		for(int i = 0; i < defect.total(); i++)
+                    		{
+                    			 CvConvexityDefect convexityDefect = new CvConvexityDefect(cvGetSeqElem(defect, i));
+                    		
+                    			 if(convexityDefect.depth() > 10)
+                    			 {
+	                    			 cvCircle(imageGrab, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
+	                    			 cvCircle(imageGrab, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
+	                    			 cvCircle(imageGrab, convexityDefect.depth_point(), 3, CvScalar.RED, -1, 8, 0);
+	                    			 
+	                    			 //System.out.println(convexityDefect.depth());
+                    			 }
+                    		}
+
+                		    defect = defect.h_next();
                 		}
-                		
-                		for(int i = 0; i < points.total(); i++)
-                		{
-                			double angle;
-                			
-                			if(i == 0){
-                				angle = getAngle(coordonne[points.total()-1], coordonne[i], coordonne[i+1]);
-                			}
-                			else if(i == points.total()-1){
-                				angle = getAngle(coordonne[i-1], coordonne[i], coordonne[0]);
-                			}
-                			else{
-                				angle = getAngle(coordonne[i-1], coordonne[i], coordonne[i+1]);
-                			}
-
-                			if(angle < 90)
-                			{
-                				cvCircle(imageGrab, coordonne[i], 3, CvScalar.WHITE, -1, 8, 0);
-                			}
-                		}*/
                 	}
                 }
                 contour = contour.h_next();
@@ -384,7 +378,7 @@ public class Main
     			}
     		}
     	}
-    	
+
     	return first_contour; 
     }
     
@@ -578,6 +572,25 @@ public class Main
 		return (short) (bb.get(index) & 0xff);
     }
 
+    public static void cv2LUT(IplImage src, IplImage dst)
+    {
+		int width = src.width();
+		int height = src.height();
+		int pixelIndex;
+
+		ByteBuffer srcBuffer = src.getByteBuffer();
+		ByteBuffer dstBuffer = dst.getByteBuffer();
+    	
+		for(int x = 0; x < width; x++)
+		{
+			for(int y = 0; y < height; y++)
+			{
+				pixelIndex = x + width*y;
+				dstBuffer.put(pixelIndex, (byte)(255 - getUnsignedByte(srcBuffer, pixelIndex)));
+			}
+		}
+    }
+    
     public static void cv2DrawContours(IplImage src, CvSeq contour, CvScalar external_color, CvScalar hole_color,  int max_level,  int thickness, int lineType)
     {
 		CvPoint[] coordonne = new CvPoint[contour.total()];

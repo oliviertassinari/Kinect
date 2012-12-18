@@ -37,6 +37,7 @@ public class Main
 		Fenetre.setLocationRelativeTo(null);
 		Fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+
 		/*creation de la fenetre utilisée pour l'affichage de la video. L'objet CanvasFrame en JavaCV peut utiliser
 		l'accélération materielle pour afficher les vidéos, profitons-en ! */
 		CanvasFrame fenetreFrame1 = new CanvasFrame("AVI Playback Demo");

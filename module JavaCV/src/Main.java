@@ -183,7 +183,7 @@ public class Main
                     			 {
 	                    			 cvCircle(imageGrab, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
 	                    			 cvCircle(imageGrab, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
-	                    			 cvCircle(imageGrab, convexityDefect.depth_point(), 3, CvScalar.RED, -1, 8, 0);
+	                    			 cvCircle(imageGrab, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
 	                    			 
 	                    			 //System.out.println(convexityDefect.depth());
                     			 }

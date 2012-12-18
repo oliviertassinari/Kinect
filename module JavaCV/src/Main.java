@@ -17,7 +17,7 @@ public class Main
     	OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test1.mkv");
     	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test2.mpg");
 		grabber.start();
-
+ 
 		IplImage imageGrab = grabber.grab();
 		IplImage imageTraitement;
 		int width  = imageGrab.width();

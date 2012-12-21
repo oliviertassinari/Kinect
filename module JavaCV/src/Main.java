@@ -223,7 +223,7 @@ public class Main
 
     	return new CvPoint((int)box.center().x(), (int)box.center().y());
     }
-    
+
     public static void cv2CvtColor(IplImage src, IplImage dst, int code)
     {
     	if(code == CV_RGB2GRAY)
@@ -255,7 +255,7 @@ public class Main
 		int value;
 		minVal[0] = 255;
 		maxVal[0] = 0;
-		
+
 		for(int x = 0; x < width; x++)
 		{
 			for(int y = 0; y < height; y++)

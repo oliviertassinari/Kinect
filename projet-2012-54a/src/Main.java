@@ -17,7 +17,6 @@ public class Main
     	OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test1.mkv");
     	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test2.mpg");
 		grabber.start();
- 
 
 		IplImage imageGrab = grabber.grab();
 		IplImage imageTraitement;
@@ -37,7 +36,6 @@ public class Main
 		Fenetre.setSize(width*2+20, height);
 		Fenetre.setLocationRelativeTo(null);
 		Fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
 
 		/*creation de la fenetre utilisée pour l'affichage de la video. L'objet CanvasFrame en JavaCV peut utiliser
 		l'accélération materielle pour afficher les vidéos, profitons-en ! */
@@ -128,6 +126,43 @@ public class Main
 			 Votre code sera bien entendu rendu disponible sous le GIT de votre projet pact, et vous aurez la sympathique attention de 
 			 prévenir votre expert JavaCV de l'endroit où il peut trouver le code.
 			 */
+
+			//Exercie 1
+			/*ByteBuffer imageGrabBuffer = imageGrab.getByteBuffer();
+    		for(int x = 0; x < width; x++)
+    		{
+    			for(int y = 0; y < height; y++)
+    			{
+    				imageGrabBuffer.put(3*x + 3*width*y, (byte) 255);
+    			}
+    		}*/
+			
+			//Exercice 2
+			/*ByteBuffer imageGrabBuffer = imageGrab.getByteBuffer();
+    		for(int x = (int)(width/2); x < width; x++)
+    		{
+    			for(int y = (int)(height/2); y < height; y++)
+    			{
+    				imageGrabBuffer.put(3*x + 3*width*y + 2, (byte) 255);
+    			}
+    		}*/
+
+			//Exercice 4
+			/*ByteBuffer imageGrabBuffer = imageGrab.getByteBuffer();
+    		for(int x = 0; x < width; x++)
+    		{
+    			for(int y = 0; y < height; y++)
+    			{
+    				if(getUnsignedByte(imageGrabBuffer, 3*x + 3*width*y + 1) > (int)(255/2))
+    				{
+    					imageGrabBuffer.put(3*x + 3*width*y, (byte) 255);
+    					imageGrabBuffer.put(3*x + 3*width*y + 1, (byte) 255);
+    					imageGrabBuffer.put(3*x + 3*width*y + 2, (byte) 255);
+    				}
+    			}
+    		}*/	
+			
+			//Exercice 5 - 6
 			
 			timeBegin = System.currentTimeMillis();
 			
@@ -193,7 +228,7 @@ public class Main
 
                 		    defect = defect.h_next();
                 		}
-                	}
+                 	}
                 }
                 contour = contour.h_next();
             }
@@ -224,7 +259,7 @@ public class Main
 
     	return new CvPoint((int)box.center().x(), (int)box.center().y());
     }
-
+    
     public static void cv2CvtColor(IplImage src, IplImage dst, int code)
     {
     	if(code == CV_RGB2GRAY)
@@ -256,7 +291,7 @@ public class Main
 		int value;
 		minVal[0] = 255;
 		maxVal[0] = 0;
-
+		
 		for(int x = 0; x < width; x++)
 		{
 			for(int y = 0; y < height; y++)

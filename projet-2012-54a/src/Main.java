@@ -1,3 +1,5 @@
+import com.googlecode.fannj.Fann;
+
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.*;
 import static com.googlecode.javacv.cpp.opencv_core.*;
@@ -7,28 +9,48 @@ import com.googlecode.javacv.OpenCVFrameGrabber;
 import com.googlecode.javacv.cpp.opencv_core.CvPoint;
 
 import javax.swing.JFrame;
+
 import java.awt.GridLayout;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 public class Main
 {
     public static void main(String[] args) throws Exception
     {
-    	OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test1.mkv");
-    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("depth_pact54_test2.mpg");
+    	//System.setProperty("jna.library.path", "E:/Programation/Java/Bibliotheque/fann/bin/");
+
+    	//System.out.println( System.getProperty("jna.library.path") ); //maybe the path is malformed
+    	//File file = new File(System.getProperty("jna.library.path") + "fannfloat.dll");
+    	//System.out.println("Is the dll file there:" + file.exists());
+
+    	//System.load("E:/Programation/Java/Bibliotheque/fann/bin/fannfloat.dll");
+
+    	//System.out.println(System.getProperty("user.dir"));
+
+    	System.load(System.getProperty("user.dir")+"\\lib\\fannfloat.dll"); 
+
+        Fann fann = new Fann("ann/geste.net");
+
+        int timeUp = 0;
+        String textUp = "";
+
+    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test1.mkv");
+    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test2.mpg");
+    	OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact42_test1.mkv");
 		grabber.start();
 
 		IplImage imageGrab = grabber.grab();
-		IplImage imageTraitement;
 		int width  = imageGrab.width();
 		int height = imageGrab.height();
-		long timeBegin;
-		long timeEnd;
     	CvPoint minPoint = new CvPoint();
     	CvPoint maxPoint = new CvPoint();
     	double[] minVal = new double[1];
     	double[] maxVal = new double[1];
-    	CvSeq contour;
+
+    	MainPosition mainPosition = new MainPosition();
+    	MainPosition mainPositionLeft = new MainPosition();
+    	MainPosition mainPositionRight = new MainPosition();
 
     	JFrame Fenetre = new JFrame();
 		Fenetre.setLayout(new GridLayout(1, 2));
@@ -163,10 +185,10 @@ public class Main
     		}*/	
 			
 			//Exercice 5 - 6
-			
-			timeBegin = System.currentTimeMillis();
-			
-			imageTraitement = IplImage.create(width, height, IPL_DEPTH_8U, 1);
+
+			long timeBegin = System.currentTimeMillis();
+
+			IplImage imageTraitement = IplImage.create(width, height, IPL_DEPTH_8U, 1);
 //        	cv2CvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
         	cvCvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
 
@@ -174,86 +196,291 @@ public class Main
 
 //         	cv2Smooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
         	cvSmooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
+
+        	IplImage imageThreshold = imageTraitement.clone();
+
 //        	cv2MinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
         	cvMinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
-//        	cv2Threshold(imageTraitement, imageTraitement, minVal[0] + 15, 255, CV_THRESH_BINARY);
-        	cvThreshold(imageTraitement, imageTraitement, minVal[0] + 15, 255, CV_THRESH_BINARY);
 
+        	int isFind = 1;
+        	ArrayList<CvPoint> centerList = new ArrayList<CvPoint>();
 
-        	cvCircle(imageGrab, minPoint, 3, CvScalar.YELLOW, -1, 8, 0);
+        	while(isFind != 0 && isFind < 3) //2 itérations max
+        	{
+        		isFind++;
 
-        	contour = new CvSeq();
-         	cvFindContours(imageTraitement.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
- //       	contour = cv3FindContours(imageTraitement, storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+	//        	cv2Threshold(imageTraitement, imageThreshold, minVal[0] + 15*isFind, 255, CV_THRESH_BINARY);
+	        	cvThreshold(imageTraitement, imageThreshold, minVal[0] + 15*isFind, 255, CV_THRESH_BINARY);
 
-            while(contour != null && !contour.isNull())
-            {
-            	if(contour.elem_size() > 0)
-                {
-                	double aire = cvContourArea(contour, CV_WHOLE_SEQ, 0);
- //               	double aire = cv2ContourArea(contour, CV_WHOLE_SEQ, 0);
+	        	cvCircle(imageGrab, minPoint, 3, CvScalar.YELLOW, -1, 8, 0);
 
-                	if(aire > 50 && aire < 100000)
-                	{
-                		cvDrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
-//	                	cv2DrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
- 
-                	    CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.015, 0);
-                		cvDrawContours(imageGrab, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
+	        	CvSeq contour = new CvSeq();
+	         	cvFindContours(imageThreshold.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+	 //       	contour = cv3FindContours(imageTraitement, storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+	         	
+	            while(contour != null && !contour.isNull())
+	            {
+	            	if(contour.elem_size() > 0)
+	                {
+	            		double aire = cvContourArea(contour, CV_WHOLE_SEQ, 0);
+	 //               	double aire = cv2ContourArea(contour, CV_WHOLE_SEQ, 0);
 
-                		CvSeq convex = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 1);
-                		cvDrawContours(imageGrab, convex, CvScalar.RED, CvScalar.RED, -1, 1, CV_AA);
+	                	if(aire > 50 && aire < 100000)
+	                	{
+	                		isFind = 0; //true
 
-                		CvPoint centre1 = getContourCenter1(convex, storage);
-                		cvCircle(imageGrab, centre1, 3, CvScalar.RED, -1, 8, 0);
+	                		cvDrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
+	//	                	cv2DrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
 
-                		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
-                		CvSeq defect = cvConvexityDefects(contour, hull, storage);
- 
-                		while(defect != null)
-                		{
-                    		for(int i = 0; i < defect.total(); i++)
-                    		{
-                    			 CvConvexityDefect convexityDefect = new CvConvexityDefect(cvGetSeqElem(defect, i));
-                    		
-                    			 if(convexityDefect.depth() > 10)
-                    			 {
-	                    			 cvCircle(imageGrab, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
-	                    			 cvCircle(imageGrab, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
-	                    			 cvCircle(imageGrab, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
-	                    			 
-	                    			 //System.out.println(convexityDefect.depth());
-                    			 }
-                    		}
+	                	    CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.015, 0);
+	                		cvDrawContours(imageGrab, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
 
-                		    defect = defect.h_next();
-                		}
-                 	}
-                }
-                contour = contour.h_next();
-            }
+	                		CvSeq convex = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 1);
+	                		cvDrawContours(imageGrab, convex, CvScalar.RED, CvScalar.RED, -1, 1, CV_AA);
 
-			fenetreFrame1.showImage(imageTraitement);
+	                		CvPoint centre = getContourCenter(convex, storage);
+	                		cvCircle(imageGrab, centre, 3, CvScalar.RED, -1, 8, 0);
+
+	                		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
+	                		CvSeq defect = cvConvexityDefects(contour, hull, storage);
+
+	                		while(defect != null)
+	                		{
+	                    		for(int i = 0; i < defect.total(); i++)
+	                    		{
+	                    			 CvConvexityDefect convexityDefect = new CvConvexityDefect(cvGetSeqElem(defect, i));
+
+	                    			 if(convexityDefect.depth() > 10)
+	                    			 {
+		                    			 cvCircle(imageGrab, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
+		                    			 cvCircle(imageGrab, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
+		                    			 cvCircle(imageGrab, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
+
+		                    			 //System.out.println(convexityDefect.depth());
+	                    			 }
+	                    		}
+
+	                		    defect = defect.h_next();
+	                		}
+
+	                		centerList.add(centre);
+	                 	}
+	                }
+	                contour = contour.h_next();
+	            }
+        	}
+
+        	long[] center = mainPosition.get(0);
+			long[] centreLeft = mainPositionLeft.get(0);
+			long[] centreRight = mainPositionRight.get(0);
+
+			if(centreLeft[0] == 0 && centreRight[0] == 0) //Vide
+			{
+				if(centerList.size() == 1) //1 centre détecté
+				{
+					CvPoint centre = centerList.get(0);
+					mainPosition.add(timeBegin, centre, getDepth(imageTraitement, centre));
+				}
+				else
+				{
+	    			CvPoint centre1 = centerList.get(0);
+	    			CvPoint centre2 = centerList.get(1);
+
+        			if(centre2.x() > centre1.x()) //center1 : left
+        			{
+        				mainPositionLeft.add(timeBegin, centre1, getDepth(imageTraitement, centre1));
+        				mainPositionRight.add(timeBegin, centre2, getDepth(imageTraitement, centre2));
+        				
+    	    			if(center[0] != 0) //non vide
+    	    			{
+    	    				if(getLenght(center[0], center[1], centre1.x(), centre1.y()) < getLenght(center[0], center[1], centre2.x(), centre2.y()))
+    	    				{
+    	    					mainPositionLeft.add(mainPosition);
+    	    				}
+    	    				else
+    	    				{
+    	    					mainPositionRight.add(mainPosition);
+    	    				}
+    	    			}
+        			}
+        			else
+        			{
+        				mainPositionLeft.add(timeBegin, centre2, getDepth(imageTraitement, centre2));
+        				mainPositionRight.add(timeBegin, centre1, getDepth(imageTraitement, centre1));	
+        				
+    	    			if(center[0] != 0) //non vide
+    	    			{
+    	    				if(getLenght(center[0], center[1], centre1.x(), centre1.y()) < getLenght(center[0], center[1], centre2.x(), centre2.y()))
+    	    				{
+    	    					mainPositionRight.add(mainPosition);
+    	    				}
+    	    				else
+    	    				{
+    	    					mainPositionLeft.add(mainPosition);
+    	    				}
+    	    			}
+        			}
+				}
+			}
+			else if(centerList.size() > 0)
+			{
+				int choose = 0;
+				double[] lengthListToLeft = new double[centerList.size()];
+				double[] lengthListToRight = new double[centerList.size()];
+
+				for(int i = 0; i < centerList.size(); i++)
+				{
+					lengthListToLeft[i] = getLenght(centreLeft[1], centreLeft[2], centerList.get(i).x(), centerList.get(i).y());
+					lengthListToRight[i] = getLenght(centreRight[1], centreRight[2], centerList.get(i).x(), centerList.get(i).y());
+				}
+
+				int[] minLengthListToLeft = getMinList(lengthListToLeft);
+				int[] minLengthListToRight = getMinList(lengthListToRight);
+
+				if(minLengthListToLeft[1] < minLengthListToRight[1])
+				{
+					choose = 1;
+					mainPositionLeft.add(timeBegin, centerList.get(minLengthListToLeft[0]), getDepth(imageTraitement, centerList.get(minLengthListToLeft[0])));
+					centerList.remove(minLengthListToLeft[0]);
+				}
+				else
+				{
+					choose = 2;
+    				mainPositionRight.add(timeBegin, centerList.get(minLengthListToRight[0]), getDepth(imageTraitement, centerList.get(minLengthListToRight[0])));
+    				centerList.remove(minLengthListToRight[0]);
+				}
+
+				if(centerList.size() == 1)
+				{
+					if(choose == 1)
+					{
+						mainPositionRight.add(timeBegin, centerList.get(0), getDepth(imageTraitement, centerList.get(0)));
+					}
+					else
+					{
+						mainPositionLeft.add(timeBegin, centerList.get(0), getDepth(imageTraitement, centerList.get(0)));
+					}
+				}
+				else if(centerList.size() > 1)
+				{
+					if(choose == 1)
+					{
+						lengthListToRight = new double[centerList.size()];
+						
+						for(int i = 0; i < centerList.size(); i++)
+						{
+							lengthListToRight[i] = getLenght(centreRight[1], centreRight[2], centerList.get(i).x(), centerList.get(i).y());
+						}
+
+						minLengthListToRight = getMinList(lengthListToRight);
+
+						mainPositionRight.add(timeBegin, centerList.get(minLengthListToRight[0]), getDepth(imageTraitement, centerList.get(minLengthListToRight[0])));
+					}
+					else
+					{
+						lengthListToLeft = new double[centerList.size()];
+
+						for(int i = 0; i < centerList.size(); i++)
+						{
+							lengthListToLeft[i] = getLenght(centreLeft[1], centreLeft[2], centerList.get(i).x(), centerList.get(i).y());
+						}
+
+						minLengthListToLeft = getMinList(lengthListToLeft);
+
+						mainPositionLeft.add(timeBegin, centerList.get(minLengthListToLeft[0]), getDepth(imageTraitement, centerList.get(minLengthListToLeft[0])));
+					}					
+				}
+			}
+
+			CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.6, 1); 
+			
+			if(mainPositionLeft.get(0)[0] == timeBegin)
+			{
+				cvPutText(imageGrab, "Gauche", cvPoint((int)mainPositionLeft.get(0)[1]-20, (int)mainPositionLeft.get(0)[2]-10), font, CvScalar.BLUE);
+			}
+			if(mainPositionRight.get(0)[0] == timeBegin)
+			{
+				cvPutText(imageGrab, "Droite", cvPoint((int)mainPositionRight.get(0)[1]-20, (int)mainPositionRight.get(0)[2]-10), font, CvScalar.RED);
+			}
+
+			String out = "";
+			long[] positionLast = mainPositionLeft.get(19);
+
+			for(int i = 0; i < 19; i++)
+			{
+	    		long[] position = mainPositionLeft.get(i);
+	    		long[] position2 = mainPositionLeft.get(i+1);
+
+	    		out += ((float)(position[1]-position2[1])/400)+" "+((float)(position[2]-position2[2])/400)+" "+((float)(position[3]-position2[3])/400)+" "+((float)i/18)+" ";
+			}
+
+			//System.out.println(out);
+
+	        float[] inputs = new float[76];
+
+			for(int i = 0; i < 19; i++)
+			{
+	    		long[] position = mainPositionLeft.get(i);
+	    		long[] position2 = mainPositionLeft.get(i+1);
+
+				inputs[4*i] = (float)(position[1]-position2[1])/400;
+				inputs[4*i+1] = (float)(position[2]-position2[2])/400;
+				inputs[4*i+2] = (float)(position[3]-position2[3])/400;
+				inputs[4*i+3] = (float)i/18;
+			}
+
+			float[] outputs = fann.run(inputs);
+
+	        //System.out.println(outputs[0] +" "+ outputs[1]+ " "+outputs[2]);
+
+			if(positionLast[0] != 0)
+			{
+		        if(outputs[0] > 0.9)
+		        {
+		        	textUp = "geste main gauche : en bas";
+		        	timeUp = 0;
+		        }
+		        else if(outputs[1] > 0.9)
+		        {
+		        	textUp = "geste main gauche : a gauche";
+		        	timeUp = 0;
+		        }
+		        else if(outputs[2] > 0.9)
+		        {
+		        	textUp = "geste main gauche : en bas a gauche";
+		        	timeUp = 0;
+		        }
+			}
+
+	        if(textUp != "" &&  timeUp < 800)
+	        {
+	        	timeUp += 100;
+	        	cvPutText(imageGrab, textUp, cvPoint(20, 20), font, CvScalar.BLACK);
+	        }
+			
+			fenetreFrame1.showImage(imageThreshold);
 			fenetreFrame2.showImage(imageGrab);
 
 			cvClearMemStorage(storage);
-
-			timeEnd = 100-(int)(System.currentTimeMillis()-timeBegin);
 			
+			long timeEnd = 100-(int)(System.currentTimeMillis()-timeBegin);
+
 			if(timeEnd > 0)
 			{
 				Thread.sleep(timeEnd);
 			}
-			
+
 			System.out.println(-timeEnd+100+" ms");
 	    }
+
+        fann.close();
 
 		grabber.stop();
 		fenetreFrame1.dispose();
 		fenetreFrame2.dispose();
     }
 
-    public static CvPoint getContourCenter1(CvSeq contour, CvMemStorage storage)
+    public static CvPoint getContourCenter(CvSeq contour, CvMemStorage storage)
     {
     	CvBox2D box = cvMinAreaRect2(contour, storage);
 
@@ -627,7 +854,7 @@ public class Main
 			}
 		}
     }
-    
+
     public static void cv2DrawContours(IplImage src, CvSeq contour, CvScalar external_color, CvScalar hole_color,  int max_level,  int thickness, int lineType)
     {
 		CvPoint[] coordonne = new CvPoint[contour.total()];
@@ -643,7 +870,7 @@ public class Main
 			srcBuffer.put(3*coordonne[i].x() + 3*width*coordonne[i].y()+2, (byte) 0);
 		}
     }
-    
+
     public static double getAngle(CvPoint point0, CvPoint pointCentre, CvPoint point1)
     {
 		double p0c = Math.sqrt(Math.pow(pointCentre.x()-point0.x(),2) + Math.pow(pointCentre.y()-point0.y(),2)); // p0->c (b)   
@@ -651,5 +878,34 @@ public class Main
 		double p0p1 = Math.sqrt(Math.pow(point1.x()-point0.x(),2) + Math.pow(point1.y()-point0.y(),2)); // p0->p1 (c)
 
 		return Math.acos((p1c*p1c+p0c*p0c-p0p1*p0p1)/(2*p1c*p0c))*(180/Math.PI);
+    }
+
+    public static int getDepth(IplImage src, CvPoint point)
+    {
+    	return getUnsignedByte(src.getByteBuffer(), point.x() + src.width()*point.y());
+    }
+
+    public static double getLenght(long x1, long y1, int x2, int y2)
+    {
+    	return Math.sqrt(((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2)));
+    }
+
+    public static int[] getMinList(double[] list)
+    {
+    	double min = list[0];
+    	int index = 0;
+
+    	for(int i = 1; i < list.length; i++)
+    	{
+    		if(list[i] < min)
+    		{
+    			min = list[i];
+    			index = i;
+    		}
+    	}
+
+    	int[] r = {index, (int)min};
+
+    	return r;
     }
 }

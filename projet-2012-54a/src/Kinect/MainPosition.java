@@ -1,4 +1,5 @@
 package Kinect;
+
 import com.googlecode.javacv.cpp.opencv_core.CvPoint;
 
 public class MainPosition

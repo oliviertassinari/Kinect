@@ -34,7 +34,7 @@ public class Kinect implements Runnable
 	private MainPosition mainPositionRight = new MainPosition();
 	private IplImage imageGrab;
 	private IplImage imageTraitement;
-	private long timeBegin;
+	private long timeLastGrab;
 
 	public Kinect()
     {
@@ -46,6 +46,16 @@ public class Kinect implements Runnable
 	{
 		try
 		{
+	        double duration = 10.0; // seconds
+	        double frequency = 120; // Hz
+	        double mincutoff = 1.0; // FIXME
+	        double beta = 1.0;      // FIXME
+	        double dcutoff = 1.0;   // this one should be ok
+
+
+			OneEuroFilter f1 = new OneEuroFilter(frequency, mincutoff, beta, dcutoff);
+			OneEuroFilter f2 = new OneEuroFilter(frequency, mincutoff, beta, dcutoff);
+
 			Fann fann = new Fann("ann/geste.net");
 
 	        int timeUp = 0;
@@ -76,11 +86,9 @@ public class Kinect implements Runnable
 			/*creation de la fenetre utilisée pour l'affichage de la video. L'objet CanvasFrame en JavaCV peut utiliser
 			l'accélération materielle pour afficher les vidéos, profitons-en ! */
 			CanvasFrame fenetreFrame1 = new CanvasFrame("AVI Playback Demo");
-			fenetreFrame1.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame1.getCanvas());
 
 			CanvasFrame fenetreFrame2 = new CanvasFrame("AVI Playback Demo");
-			fenetreFrame2.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame2.getCanvas());
 
 			Fenetre.setVisible(true);
@@ -200,7 +208,7 @@ public class Kinect implements Runnable
 
 				//Exercice 5 - 6
 
-				timeBegin = System.currentTimeMillis();
+				timeLastGrab = System.currentTimeMillis();
 
 				imageTraitement = IplImage.create(width, height, IPL_DEPTH_8U, 1);
 	//        	cv2CvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
@@ -251,10 +259,10 @@ public class Kinect implements Runnable
 	
 		                		CvSeq convex = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 1);
 		                		cvDrawContours(imageGrab, convex, CvScalar.RED, CvScalar.RED, -1, 1, CV_AA);
-	
+
 		                		CvPoint centre = getContourCenter(convex, storage);
 		                		cvCircle(imageGrab, centre, 3, CvScalar.RED, -1, 8, 0);
-	
+
 		                		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
 		                		CvSeq defect = cvConvexityDefects(contour, hull, storage);
 	
@@ -286,13 +294,17 @@ public class Kinect implements Runnable
 
 	        	getPositionHand(centerList);
 
+	        	mainPositionLeft.get(0)[1] = (int)(f1.filter(mainPositionLeft.get(0)[1]));
+	        	mainPositionLeft.get(0)[2] = (int)(f2.filter(mainPositionLeft.get(0)[2]));
+        		cvCircle(imageGrab, new CvPoint((int)mainPositionLeft.get(0)[1], (int)mainPositionLeft.get(0)[2]), 3, CvScalar.BLUE, -1, 8, 0);
+
 				CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.6, 1); 
 
-				if(mainPositionLeft.get(0)[0] == timeBegin)
+				if(mainPositionLeft.get(0)[0] == timeLastGrab)
 				{
 					cvPutText(imageGrab, "Gauche", cvPoint((int)mainPositionLeft.get(0)[1]-20, (int)mainPositionLeft.get(0)[2]-10), font, CvScalar.BLUE);
 				}
-				if(mainPositionRight.get(0)[0] == timeBegin)
+				if(mainPositionRight.get(0)[0] == timeLastGrab)
 				{
 					cvPutText(imageGrab, "Droite", cvPoint((int)mainPositionRight.get(0)[1]-20, (int)mainPositionRight.get(0)[2]-10), font, CvScalar.RED);
 				}
@@ -357,7 +369,7 @@ public class Kinect implements Runnable
 
 				cvClearMemStorage(storage);
 
-				long timeEnd = 100-(int)(System.currentTimeMillis()-timeBegin);
+				long timeEnd = 100-(int)(System.currentTimeMillis()-timeLastGrab);
 	
 				if(timeEnd > 0)
 				{
@@ -380,6 +392,9 @@ public class Kinect implements Runnable
 		catch(InterruptedException e)
 		{
 			e.printStackTrace();
+		} catch (java.lang.Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
     }
 
@@ -394,7 +409,7 @@ public class Kinect implements Runnable
 			if(centerList.size() == 1) //1 centre d�tect�
 			{
 				CvPoint centre = centerList.get(0);
-				mainPosition.add(timeBegin, centre, getDepth(centre));
+				mainPosition.add(timeLastGrab, centre, getDepth(centre));
 			}
 			else
 			{
@@ -403,8 +418,8 @@ public class Kinect implements Runnable
 
     			if(centre2.x() > centre1.x()) //center1 : left
     			{
-    				mainPositionLeft.add(timeBegin, centre1, getDepth(centre1));
-    				mainPositionRight.add(timeBegin, centre2, getDepth(centre2));
+    				mainPositionLeft.add(timeLastGrab, centre1, getDepth(centre1));
+    				mainPositionRight.add(timeLastGrab, centre2, getDepth(centre2));
 
 	    			if(center[0] != 0) //non vide
 	    			{
@@ -420,8 +435,8 @@ public class Kinect implements Runnable
     			}
     			else
     			{
-    				mainPositionLeft.add(timeBegin, centre2, getDepth(centre2));
-    				mainPositionRight.add(timeBegin, centre1, getDepth(centre1));	
+    				mainPositionLeft.add(timeLastGrab, centre2, getDepth(centre2));
+    				mainPositionRight.add(timeLastGrab, centre1, getDepth(centre1));	
 
 	    			if(center[0] != 0) //non vide
 	    			{
@@ -455,13 +470,13 @@ public class Kinect implements Runnable
 			if(minLengthListToLeft[1] < minLengthListToRight[1])
 			{
 				choose = 1;
-				mainPositionLeft.add(timeBegin, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])));
+				mainPositionLeft.add(timeLastGrab, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])));
 				centerList.remove(minLengthListToLeft[0]);
 			}
 			else
 			{
 				choose = 2;
-				mainPositionRight.add(timeBegin, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])));
+				mainPositionRight.add(timeLastGrab, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])));
 				centerList.remove(minLengthListToRight[0]);
 			}
 
@@ -469,11 +484,11 @@ public class Kinect implements Runnable
 			{
 				if(choose == 1)
 				{
-					mainPositionRight.add(timeBegin, centerList.get(0), getDepth(centerList.get(0)));
+					mainPositionRight.add(timeLastGrab, centerList.get(0), getDepth(centerList.get(0)));
 				}
 				else
 				{
-					mainPositionLeft.add(timeBegin, centerList.get(0), getDepth(centerList.get(0)));
+					mainPositionLeft.add(timeLastGrab, centerList.get(0), getDepth(centerList.get(0)));
 				}
 			}
 			else if(centerList.size() > 1)
@@ -489,7 +504,7 @@ public class Kinect implements Runnable
 
 					minLengthListToRight = getMinList(lengthListToRight);
 
-					mainPositionRight.add(timeBegin, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])));
+					mainPositionRight.add(timeLastGrab, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])));
 				}
 				else
 				{
@@ -502,7 +517,7 @@ public class Kinect implements Runnable
 
 					minLengthListToLeft = getMinList(lengthListToLeft);
 
-					mainPositionLeft.add(timeBegin, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])));
+					mainPositionLeft.add(timeLastGrab, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])));
 				}					
 			}
 		}
@@ -513,15 +528,6 @@ public class Kinect implements Runnable
     	CvBox2D box = cvMinAreaRect2(contour, storage);
 
     	return new CvPoint((int)box.center().x(), (int)box.center().y());
-    }
-   
-    public double getAngle(CvPoint point0, CvPoint pointCentre, CvPoint point1)
-    {
-		double p0c = Math.sqrt(Math.pow(pointCentre.x()-point0.x(),2) + Math.pow(pointCentre.y()-point0.y(),2)); // p0->c (b)   
-		double p1c = Math.sqrt(Math.pow(pointCentre.x()-point1.x(),2) + Math.pow(pointCentre.y()-point1.y(),2)); // p1->c (a)
-		double p0p1 = Math.sqrt(Math.pow(point1.x()-point0.x(),2) + Math.pow(point1.y()-point0.y(),2)); // p0->p1 (c)
-
-		return Math.acos((p1c*p1c+p0c*p0c-p0p1*p0p1)/(2*p1c*p0c))*(180/Math.PI);
     }
 
     public int getDepth(CvPoint point)

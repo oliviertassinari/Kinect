@@ -2,55 +2,39 @@ package Kinect;
 
 class LowPassFilter
 {
-	private double y, s;
-	private double alpha;
+	private double x, X;
 	private boolean initialized = false;
 
 	public LowPassFilter(double alpha)
 	{
-	    y = s = 0;
-	    this.alpha = alpha;
+	    x = X = 0;
 	}
 
-	public void setAlpha(double alpha)
+	public double filter(double value, double alpha)
 	{
-		this.alpha = alpha;
-	}
-
-	public double filter(double value)
-	{
-	    double result;
-	 
 	    if(initialized)
 	    {
-	        result = alpha * value + (1.0 - alpha) * s;
+	        X = alpha * value + (1 - alpha) * X;
 	    }
 	    else
 	    {
-	        result = value;
+	        X = value;
 	        initialized = true;
 	    }
 
-	    y = value;
-	    s = result;
+	    x = value;
 
-	    return result;
+	    return X;
 	}
 
-	public double filterWithAlpha(double value, double alpha)
-	{
-		this.alpha = alpha;
-	    return filter(value);
-	}
-
-	public boolean hasLastRawValue()
+	public boolean isInitialized()
 	{
 	    return initialized;
 	}
 
 	public double lastRawValue()
 	{
-	    return y;
+	    return x;
 	}
 }
 

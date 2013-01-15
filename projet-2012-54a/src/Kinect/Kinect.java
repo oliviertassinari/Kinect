@@ -46,15 +46,10 @@ public class Kinect implements Runnable
 	{
 		try
 		{
-	        double duration = 10.0; // seconds
-	        double frequency = 120; // Hz
-	        double mincutoff = 1.0; // FIXME
-	        double beta = 1.0;      // FIXME
-	        double dcutoff = 1.0;   // this one should be ok
-
-
-			OneEuroFilter f1 = new OneEuroFilter(frequency, mincutoff, beta, dcutoff);
-			OneEuroFilter f2 = new OneEuroFilter(frequency, mincutoff, beta, dcutoff);
+			OneEuroFilter x1 = new OneEuroFilter(0.1, 2, 0.01, 1);
+			OneEuroFilter y1 = new OneEuroFilter(0.1, 2, 0.01, 1);
+			OneEuroFilter x2 = new OneEuroFilter(0.1, 2, 0.01, 1);
+			OneEuroFilter y2 = new OneEuroFilter(0.1, 2, 0.01, 1);
 
 			Fann fann = new Fann("ann/geste.net");
 
@@ -86,9 +81,11 @@ public class Kinect implements Runnable
 			/*creation de la fenetre utilisée pour l'affichage de la video. L'objet CanvasFrame en JavaCV peut utiliser
 			l'accélération materielle pour afficher les vidéos, profitons-en ! */
 			CanvasFrame fenetreFrame1 = new CanvasFrame("AVI Playback Demo");
+			fenetreFrame1.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame1.getCanvas());
 
 			CanvasFrame fenetreFrame2 = new CanvasFrame("AVI Playback Demo");
+			fenetreFrame2.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame2.getCanvas());
 
 			Fenetre.setVisible(true);
@@ -294,9 +291,13 @@ public class Kinect implements Runnable
 
 	        	getPositionHand(centerList);
 
-	        	mainPositionLeft.get(0)[1] = (int)(f1.filter(mainPositionLeft.get(0)[1]));
-	        	mainPositionLeft.get(0)[2] = (int)(f2.filter(mainPositionLeft.get(0)[2]));
+	        	mainPositionLeft.get(0)[1] = (int)(x1.filter(mainPositionLeft.get(0)[1]));
+	        	mainPositionLeft.get(0)[2] = (int)(y1.filter(mainPositionLeft.get(0)[2]));
         		cvCircle(imageGrab, new CvPoint((int)mainPositionLeft.get(0)[1], (int)mainPositionLeft.get(0)[2]), 3, CvScalar.BLUE, -1, 8, 0);
+
+	        	mainPositionRight.get(0)[1] = (int)(x2.filter(mainPositionRight.get(0)[1]));
+	        	mainPositionRight.get(0)[2] = (int)(y2.filter(mainPositionRight.get(0)[2]));
+        		cvCircle(imageGrab, new CvPoint((int)mainPositionRight.get(0)[1], (int)mainPositionRight.get(0)[2]), 3, CvScalar.BLUE, -1, 8, 0);
 
 				CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.6, 1); 
 

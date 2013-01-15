@@ -2,53 +2,35 @@ package Kinect;
 
 public class OneEuroFilter
 {
-    private double freq;
-    private double mincutoff;
+    private double sampleRate;
+    private double minFreqCut;
     private double beta;
-    private double dcutoff;
+    private double dFreqCut;
     private LowPassFilter x;
     private LowPassFilter dx;
-    private double lasttime;
-    private static double UndefinedTime = -1;
 
-    public OneEuroFilter(double freq, double mincutoff, double beta, double dcutoff) throws Exception
+    public OneEuroFilter(double sampleRate, double minFreqCut, double beta, double dFreqCut)
     {
-        this.freq = freq;
-        this.mincutoff = mincutoff;
+        this.sampleRate = sampleRate;
+        this.minFreqCut = minFreqCut;
         this.beta = beta;
-        this.dcutoff = dcutoff;
+        this.dFreqCut = dFreqCut;
 
-        x = new LowPassFilter(getAlpha(mincutoff));
-        dx = new LowPassFilter(getAlpha(dcutoff));
-        lasttime = UndefinedTime;
+        x = new LowPassFilter(getAlpha(minFreqCut));
+        dx = new LowPassFilter(getAlpha(dFreqCut));
     }
 
-    public double getAlpha(double cutoff)
+    public double getAlpha(double freqCut)
     {
-        double te = 1/freq;
-        double tau = 1/(2*Math.PI*cutoff);
-        return 1/(1 + tau/te);
+        double tau = 1/(2*Math.PI*freqCut);
+        return 1/(1 + tau/sampleRate);
     }
 
-    double filter(double value) throws Exception
+    double filter(double value)
     {
-        return filter(value, UndefinedTime);
-    }
+        double dvalue = x.isInitialized() ? (value - x.lastRawValue()) / sampleRate : 0.0;
+        double edvalue = dx.filter(dvalue, getAlpha(dFreqCut));
 
-    double filter(double value, double timestamp) throws Exception
-    {
-        // update the sampling frequency based on timestamps
-        if (lasttime != UndefinedTime && timestamp != UndefinedTime) {
-            freq = 1.0 / (timestamp - lasttime);
-        }
-
-        lasttime = timestamp;
-        // estimate the current variation per second
-        double dvalue = x.hasLastRawValue() ? (value - x.lastRawValue()) * freq : 0.0; // FIXME: 0.0 or value?
-        double edvalue = dx.filterWithAlpha(dvalue, getAlpha(dcutoff));
-        // use it to update the cutoff frequency
-        double cutoff = mincutoff + beta * Math.abs(edvalue);
-        // filter the given value
-        return x.filterWithAlpha(value, getAlpha(cutoff));
+        return x.filter(value, getAlpha(minFreqCut + beta * Math.abs(edvalue)));
     }
 }

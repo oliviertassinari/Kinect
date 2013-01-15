@@ -8,6 +8,8 @@ public class OneEuroFilter
     private double dFreqCut;
     private LowPassFilter x;
     private LowPassFilter dx;
+    private LowPassFilter y;
+    private LowPassFilter dy;
 
     public OneEuroFilter(double sampleRate, double minFreqCut, double beta, double dFreqCut)
     {
@@ -18,6 +20,9 @@ public class OneEuroFilter
 
         x = new LowPassFilter(getAlpha(minFreqCut));
         dx = new LowPassFilter(getAlpha(dFreqCut));
+
+        y = new LowPassFilter(getAlpha(minFreqCut));
+        dy = new LowPassFilter(getAlpha(dFreqCut));
     }
 
     public double getAlpha(double freqCut)
@@ -26,11 +31,17 @@ public class OneEuroFilter
         return 1/(1 + tau/sampleRate);
     }
 
-    double filter(double value)
+    public double filter(double value, LowPassFilter v, LowPassFilter dv)
     {
-        double dvalue = x.isInitialized() ? (value - x.lastRawValue()) / sampleRate : 0.0;
-        double edvalue = dx.filter(dvalue, getAlpha(dFreqCut));
+        double dvalue = v.isInitialized() ? (value - v.lastRawValue()) / sampleRate : 0.0;
+        double edvalue = dv.filter(dvalue, getAlpha(dFreqCut));
 
-        return x.filter(value, getAlpha(minFreqCut + beta * Math.abs(edvalue)));
+        return v.filter(value, getAlpha(minFreqCut + beta * Math.abs(edvalue)));
+    }
+
+    public double[] filter(double value1, double value2)
+    {
+    	double[] result = { filter(value1, x, dx), filter(value2, y, dy) };
+    	return result;
     }
 }

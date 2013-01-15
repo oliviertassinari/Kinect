@@ -37,6 +37,7 @@ public class MainPosition
 		}
 	}
 
+
 	public long[] get(int index)
 	{
 		return positions[index];

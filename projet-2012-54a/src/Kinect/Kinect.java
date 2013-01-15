@@ -32,9 +32,13 @@ public class Kinect implements Runnable
 	private MainPosition mainPosition = new MainPosition();
 	private MainPosition mainPositionLeft = new MainPosition();
 	private MainPosition mainPositionRight = new MainPosition();
+	private MainPosition mainPositionFiltreLeft = new MainPosition();
+	private MainPosition mainPositionFiltreRight = new MainPosition();
 	private IplImage imageGrab;
 	private IplImage imageTraitement;
 	private long timeLastGrab;
+	private OneEuroFilter filtreLeft = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
+	private OneEuroFilter filtreRight = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
 
 	public Kinect()
     {
@@ -46,11 +50,6 @@ public class Kinect implements Runnable
 	{
 		try
 		{
-			OneEuroFilter x1 = new OneEuroFilter(0.1, 2, 0.01, 1);
-			OneEuroFilter y1 = new OneEuroFilter(0.1, 2, 0.01, 1);
-			OneEuroFilter x2 = new OneEuroFilter(0.1, 2, 0.01, 1);
-			OneEuroFilter y2 = new OneEuroFilter(0.1, 2, 0.01, 1);
-
 			Fann fann = new Fann("ann/geste.net");
 
 	        int timeUp = 0;
@@ -250,10 +249,10 @@ public class Kinect implements Runnable
 
 		                		cvDrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
 		//	                	cv2DrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
-	
+
 		                	    CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.015, 0);
 		                		cvDrawContours(imageGrab, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
-	
+
 		                		CvSeq convex = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 1);
 		                		cvDrawContours(imageGrab, convex, CvScalar.RED, CvScalar.RED, -1, 1, CV_AA);
 
@@ -262,7 +261,7 @@ public class Kinect implements Runnable
 
 		                		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
 		                		CvSeq defect = cvConvexityDefects(contour, hull, storage);
-	
+
 		                		while(defect != null)
 		                		{
 		                    		for(int i = 0; i < defect.total(); i++)
@@ -278,10 +277,10 @@ public class Kinect implements Runnable
 			                    			 //System.out.println(convexityDefect.depth());
 		                    			 }
 		                    		}
-	
+
 		                		    defect = defect.h_next();
 		                		}
-	
+
 		                		centerList.add(centre);
 		                 	}
 		                }
@@ -290,14 +289,10 @@ public class Kinect implements Runnable
 	        	}
 
 	        	getPositionHand(centerList);
+	        	getPositionFiltreHand();
 
-	        	mainPositionLeft.get(0)[1] = (int)(x1.filter(mainPositionLeft.get(0)[1]));
-	        	mainPositionLeft.get(0)[2] = (int)(y1.filter(mainPositionLeft.get(0)[2]));
-        		cvCircle(imageGrab, new CvPoint((int)mainPositionLeft.get(0)[1], (int)mainPositionLeft.get(0)[2]), 3, CvScalar.BLUE, -1, 8, 0);
-
-	        	mainPositionRight.get(0)[1] = (int)(x2.filter(mainPositionRight.get(0)[1]));
-	        	mainPositionRight.get(0)[2] = (int)(y2.filter(mainPositionRight.get(0)[2]));
-        		cvCircle(imageGrab, new CvPoint((int)mainPositionRight.get(0)[1], (int)mainPositionRight.get(0)[2]), 3, CvScalar.BLUE, -1, 8, 0);
+	    		cvCircle(imageGrab, new CvPoint((int)mainPositionFiltreLeft.get(0)[1], (int)mainPositionFiltreLeft.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
+	    		cvCircle(imageGrab, new CvPoint((int)mainPositionFiltreRight.get(0)[1], (int)mainPositionFiltreRight.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
 
 				CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.6, 1); 
 
@@ -394,7 +389,6 @@ public class Kinect implements Runnable
 		{
 			e.printStackTrace();
 		} catch (java.lang.Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
@@ -523,7 +517,24 @@ public class Kinect implements Runnable
 			}
 		}
     }
-    
+
+    public void getPositionFiltreHand()
+    {
+    	if(mainPositionLeft.get(0)[0] == timeLastGrab)
+    	{
+    		double[] result = filtreLeft.filter(mainPositionLeft.get(0)[1], mainPositionLeft.get(0)[2]);
+
+    		mainPositionFiltreLeft.add(timeLastGrab, new CvPoint((int)result[0], (int)result[1]), mainPositionLeft.get(0)[3]);
+    	}
+    	
+    	if(mainPositionRight.get(0)[0] == timeLastGrab)
+    	{
+    		double[] result = filtreRight.filter(mainPositionRight.get(0)[1], mainPositionRight.get(0)[2]);
+
+    		mainPositionFiltreRight.add(timeLastGrab, new CvPoint((int)result[0], (int)result[1]), mainPositionRight.get(0)[3]);
+    	}
+    }
+
     public CvPoint getContourCenter(CvSeq contour, CvMemStorage storage)
     {
     	CvBox2D box = cvMinAreaRect2(contour, storage);

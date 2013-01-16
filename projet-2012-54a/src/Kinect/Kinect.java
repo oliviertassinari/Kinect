@@ -526,7 +526,7 @@ public class Kinect implements Runnable
 
     		mainPositionFiltreLeft.add(timeLastGrab, new CvPoint((int)result[0], (int)result[1]), mainPositionLeft.get(0)[3]);
     	}
-    	
+
     	if(mainPositionRight.get(0)[0] == timeLastGrab)
     	{
     		double[] result = filtreRight.filter(mainPositionRight.get(0)[1], mainPositionRight.get(0)[2]);

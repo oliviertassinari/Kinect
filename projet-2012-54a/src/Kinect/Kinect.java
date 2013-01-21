@@ -28,24 +28,27 @@ import com.googlecode.javacv.cpp.opencv_imgproc.CvConvexityDefect;
 public class Kinect implements Runnable
 {
 	private Thread runner;
-
-	private MainPosition mainPosition = new MainPosition();
-	private MainPosition mainPositionLeft = new MainPosition();
+ 
+	private MainPosition mainPosition = new MainPosition(); // Left or right hand
+	private MainPosition mainPositionLeft = new MainPosition(); 
 	private MainPosition mainPositionRight = new MainPosition();
-	private MainPosition mainPositionFiltreLeft = new MainPosition();
+	private MainPosition mainPositionFiltreLeft = new MainPosition(); // Position with filter
 	private MainPosition mainPositionFiltreRight = new MainPosition();
-	private IplImage imageGrab;
-	private IplImage imageTraitement;
-	private long timeLastGrab;
+	private IplImage imageGrab; // image sent by the kinect
+	private IplImage imageTraitement; // image after thresholding
+	private long timeLastGrab;// time after last grabbing
 	private OneEuroFilter filtreLeft = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
 	private OneEuroFilter filtreRight = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
 
+	
+	// use of the kinect
 	public Kinect()
     {
 		runner = new Thread(this, "kinect");
 		runner.start();
     }
 
+	// 
 	public void run()
 	{
 		try
@@ -70,6 +73,8 @@ public class Kinect implements Runnable
 	    	double[] minVal = new double[1];
 	    	double[] maxVal = new double[1];
 
+	    	
+	    	// creation window used to display the video, the object in JavaCv can use the material acceleration
 	    	JFrame Fenetre = new JFrame();
 			Fenetre.setLayout(new GridLayout(1, 2));
 			Fenetre.setTitle("module JavaCV");
@@ -77,8 +82,7 @@ public class Kinect implements Runnable
 			Fenetre.setLocationRelativeTo(null);
 			Fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-			/*creation de la fenetre utilis√©e pour l'affichage de la video. L'objet CanvasFrame en JavaCV peut utiliser
-			l'acc√©l√©ration materielle pour afficher les vid√©os, profitons-en ! */
+			
 			CanvasFrame fenetreFrame1 = new CanvasFrame("AVI Playback Demo");
 			fenetreFrame1.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame1.getCanvas());
@@ -223,7 +227,7 @@ public class Kinect implements Runnable
 	        	int isFind = 1;
 	        	ArrayList<CvPoint> centerList = new ArrayList<CvPoint>();
 
-	        	while(isFind != 0 && isFind < 3) //2 itÈrations max
+	        	while(isFind != 0 && isFind < 3) //2 itÔøΩrations max
 	        	{
 	        		isFind++;
 
@@ -401,7 +405,7 @@ public class Kinect implements Runnable
 
 		if(centreLeft[0] == 0 && centreRight[0] == 0) //Vide
 		{
-			if(centerList.size() == 1) //1 centre dÈtectÈ
+			if(centerList.size() == 1) //1 centre dÔøΩtectÔøΩ
 			{
 				CvPoint centre = centerList.get(0);
 				mainPosition.add(timeLastGrab, centre, getDepth(centre));

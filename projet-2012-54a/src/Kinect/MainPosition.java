@@ -10,6 +10,7 @@ public class MainPosition
 	{
 	}
 
+	// this method keeps the different positions of the hand
 	public void add(long time, CvPoint centre, long depth)
 	{
 		for(int i = 19; i > 0; i--)
@@ -26,6 +27,8 @@ public class MainPosition
 		positions[0][3] = depth;
 	}
 
+	
+	// this method adds positions in the list of positions
 	public void add(MainPosition mainPosition)
 	{
 		for(int i = 19; i > 0; i--)
@@ -38,6 +41,7 @@ public class MainPosition
 	}
 
 
+	// this method returns the index of a position
 	public long[] get(int index)
 	{
 		return positions[index];

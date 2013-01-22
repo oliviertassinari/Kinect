@@ -43,7 +43,7 @@ public class MainPosition
 		}
 		
 		long deltaT = positions[0][0]-positions[1][0];
-		
+
 		derivees[0][0] = positions[0][0];
 		derivees[0][1] = (positions[0][1]-positions[1][1])/deltaT;
 		derivees[0][2] = (positions[0][2]-positions[1][2])/deltaT;
@@ -70,4 +70,8 @@ public class MainPosition
 		return positions[index];
 	}
 	
+	public long[] getDerivee(int index)
+	{
+		return derivees[index];
+	}
 }

@@ -542,11 +542,53 @@ public class Kinect implements Runnable
     	}
     }
 
+    private int ct1 = 0;
+    private int ct2 = 0;
+    private int ct3 = 0;
+    private long timeOrigin = System.currentTimeMillis();
+
     public void reconnaissanceDeMvt()
     {
-    	
+    	for(int i = 0; i < 19; i++)
+    	{
+    		long[] position = mainPositionFiltreLeft.get(i);
+    		long[] derivee = mainPositionFiltreLeft.getDerivee(i);
+
+    		if(position[0] > timeOrigin)
+    		{
+	    		if(derivee[1] < 0.1 && derivee[2] < 0.1) //stable en x, y
+	    		{
+	    			ct1 += 1;
+	    		}
+	    		else
+	    		{
+	    			ct1 = 0;
+	    		}
+
+	    		if(ct1 > 8)
+	    		{
+	    			int dz = 0;
+	    			
+	    			for(int j = 0; j <= i; j++)
+	    			{
+	    				dz += mainPositionFiltreLeft.getDerivee(j)[3];
+	    			}
+	    			
+	    			if(dz > 10)
+	    			{
+	    				timeOrigin = timeLastGrab;
+	    				ct1 = 0;
+	    				System.out.println("pause");
+	    			}
+	    		}
+    		}
+    		else
+    		{
+    			break;
+    		}
+    	}
     }
-    
+
     public CvPoint getContourCenter(CvSeq contour, CvMemStorage storage)
     {
     	CvBox2D box = cvMinAreaRect2(contour, storage);

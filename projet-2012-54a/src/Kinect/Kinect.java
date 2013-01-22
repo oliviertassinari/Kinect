@@ -294,6 +294,7 @@ public class Kinect implements Runnable
 
 	        	getPositionHand(centerList);
 	        	getPositionFiltreHand();
+	        	reconnaissanceDeMvt();
 
 	    		cvCircle(imageGrab, new CvPoint((int)mainPositionFiltreLeft.get(0)[1], (int)mainPositionFiltreLeft.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
 	    		cvCircle(imageGrab, new CvPoint((int)mainPositionFiltreRight.get(0)[1], (int)mainPositionFiltreRight.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
@@ -408,7 +409,7 @@ public class Kinect implements Runnable
 			if(centerList.size() == 1) //1 centre d�tect�
 			{
 				CvPoint centre = centerList.get(0);
-				mainPosition.add(timeLastGrab, centre, getDepth(centre));
+				mainPosition.add(timeLastGrab, centre, getDepth(centre), 0);
 			}
 			else
 			{
@@ -417,8 +418,8 @@ public class Kinect implements Runnable
 
     			if(centre2.x() > centre1.x()) //center1 : left
     			{
-    				mainPositionLeft.add(timeLastGrab, centre1, getDepth(centre1));
-    				mainPositionRight.add(timeLastGrab, centre2, getDepth(centre2));
+    				mainPositionLeft.add(timeLastGrab, centre1, getDepth(centre1), 0);
+    				mainPositionRight.add(timeLastGrab, centre2, getDepth(centre2), 0);
 
 	    			if(center[0] != 0) //non vide
 	    			{
@@ -434,8 +435,8 @@ public class Kinect implements Runnable
     			}
     			else
     			{
-    				mainPositionLeft.add(timeLastGrab, centre2, getDepth(centre2));
-    				mainPositionRight.add(timeLastGrab, centre1, getDepth(centre1));	
+    				mainPositionLeft.add(timeLastGrab, centre2, getDepth(centre2), 0);
+    				mainPositionRight.add(timeLastGrab, centre1, getDepth(centre1), 0);	
 
 	    			if(center[0] != 0) //non vide
 	    			{
@@ -469,13 +470,13 @@ public class Kinect implements Runnable
 			if(minLengthListToLeft[1] < minLengthListToRight[1])
 			{
 				choose = 1;
-				mainPositionLeft.add(timeLastGrab, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])));
+				mainPositionLeft.add(timeLastGrab, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])), 0);
 				centerList.remove(minLengthListToLeft[0]);
 			}
 			else
 			{
 				choose = 2;
-				mainPositionRight.add(timeLastGrab, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])));
+				mainPositionRight.add(timeLastGrab, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])), 0);
 				centerList.remove(minLengthListToRight[0]);
 			}
 
@@ -483,11 +484,11 @@ public class Kinect implements Runnable
 			{
 				if(choose == 1)
 				{
-					mainPositionRight.add(timeLastGrab, centerList.get(0), getDepth(centerList.get(0)));
+					mainPositionRight.add(timeLastGrab, centerList.get(0), getDepth(centerList.get(0)), 0);
 				}
 				else
 				{
-					mainPositionLeft.add(timeLastGrab, centerList.get(0), getDepth(centerList.get(0)));
+					mainPositionLeft.add(timeLastGrab, centerList.get(0), getDepth(centerList.get(0)), 0);
 				}
 			}
 			else if(centerList.size() > 1)
@@ -503,7 +504,7 @@ public class Kinect implements Runnable
 
 					minLengthListToRight = getMinList(lengthListToRight);
 
-					mainPositionRight.add(timeLastGrab, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])));
+					mainPositionRight.add(timeLastGrab, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])), 0);
 				}
 				else
 				{
@@ -516,7 +517,7 @@ public class Kinect implements Runnable
 
 					minLengthListToLeft = getMinList(lengthListToLeft);
 
-					mainPositionLeft.add(timeLastGrab, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])));
+					mainPositionLeft.add(timeLastGrab, centerList.get(minLengthListToLeft[0]), getDepth(centerList.get(minLengthListToLeft[0])), 0);
 				}					
 			}
 		}
@@ -528,17 +529,24 @@ public class Kinect implements Runnable
     	{
     		double[] result = filtreLeft.filter(mainPositionLeft.get(0)[1], mainPositionLeft.get(0)[2]);
 
-    		mainPositionFiltreLeft.add(timeLastGrab, new CvPoint((int)result[0], (int)result[1]), mainPositionLeft.get(0)[3]);
+    		mainPositionFiltreLeft.add(timeLastGrab, new CvPoint((int)result[0], (int)result[1]), mainPositionLeft.get(0)[3], 0);
+    		mainPositionFiltreLeft.computeDerivees();
     	}
 
     	if(mainPositionRight.get(0)[0] == timeLastGrab)
     	{
     		double[] result = filtreRight.filter(mainPositionRight.get(0)[1], mainPositionRight.get(0)[2]);
 
-    		mainPositionFiltreRight.add(timeLastGrab, new CvPoint((int)result[0], (int)result[1]), mainPositionRight.get(0)[3]);
+    		mainPositionFiltreRight.add(timeLastGrab, new CvPoint((int)result[0], (int)result[1]), mainPositionRight.get(0)[3], 0);
+    		mainPositionFiltreRight.computeDerivees();
     	}
     }
 
+    public void reconnaissanceDeMvt()
+    {
+    	
+    }
+    
     public CvPoint getContourCenter(CvSeq contour, CvMemStorage storage)
     {
     	CvBox2D box = cvMinAreaRect2(contour, storage);

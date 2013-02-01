@@ -9,7 +9,6 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 
-import com.googlecode.fannj.Fann;
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.CanvasFrame;
 import com.googlecode.javacv.FrameGrabber.Exception;
@@ -21,39 +20,34 @@ import com.googlecode.javacv.cpp.opencv_core.CvMemStorage;
 import com.googlecode.javacv.cpp.opencv_core.CvPoint;
 import com.googlecode.javacv.cpp.opencv_core.CvScalar;
 import com.googlecode.javacv.cpp.opencv_core.CvSeq;
-import com.googlecode.javacv.cpp.opencv_core.CvSlice;
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 import com.googlecode.javacv.cpp.opencv_imgproc.CvConvexityDefect;
 
-public class Kinect implements Runnable
+public class Traitement implements Runnable
 {
 	private Thread runner;
  
-	private MainPosition mainPosition = new MainPosition(); // Left or right hand
+	private MainPosition mainPosition = new MainPosition();
 	private MainPosition mainPositionLeft = new MainPosition(); 
 	private MainPosition mainPositionRight = new MainPosition();
-	private MainPosition mainPositionFiltreLeft = new MainPosition(); // Position with filter
+	private MainPosition mainPositionFiltreLeft = new MainPosition(); 
 	private MainPosition mainPositionFiltreRight = new MainPosition();
-	private IplImage imageGrab; // image sent by the kinect
-	private IplImage imageTraitement; // image after thresholding
-	private long timeLastGrab;// time after last grabbing
+	private IplImage imageTraitement;
+	private long timeLastGrab;
 	private OneEuroFilter filtreLeft = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
 	private OneEuroFilter filtreRight = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
 
-	
-	// use of the kinect
-	public Kinect()
+	public Traitement()
     {
 		runner = new Thread(this, "kinect");
 		runner.start();
     }
 
-	// 
 	public void run()
 	{
 		try
 		{
-			Fann fann = new Fann("ann/geste.net");
+			//Fann fann = new Fann("ann/geste.net");
 
 	        int timeUp = 0;
 	        String textUp = "";
@@ -63,9 +57,12 @@ public class Kinect implements Runnable
 	    	OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact42_test1.mkv");
 	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test2.mkv");
 
+	        //OpenKinectFrameGrabber grabber = new OpenKinectFrameGrabber(0);
+	        //grabber.setFormat("depth");
+
 			grabber.start();
 
-			imageGrab = grabber.grab();
+			IplImage imageGrab = grabber.grab();
 			int width  = imageGrab.width();
 			int height = imageGrab.height();
 	    	CvPoint minPoint = new CvPoint();
@@ -73,16 +70,15 @@ public class Kinect implements Runnable
 	    	double[] minVal = new double[1];
 	    	double[] maxVal = new double[1];
 
-	    	
+
 	    	// creation window used to display the video, the object in JavaCv can use the material acceleration
 	    	JFrame Fenetre = new JFrame();
 			Fenetre.setLayout(new GridLayout(1, 2));
 			Fenetre.setTitle("module JavaCV");
-			Fenetre.setSize(width*2+20, height);
+			Fenetre.setSize(width*3+20, height);
 			Fenetre.setLocationRelativeTo(null);
 			Fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-			
 			CanvasFrame fenetreFrame1 = new CanvasFrame("AVI Playback Demo");
 			fenetreFrame1.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame1.getCanvas());
@@ -91,9 +87,29 @@ public class Kinect implements Runnable
 			fenetreFrame2.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame2.getCanvas());
 
+			CanvasFrame fenetreFrame3 = new CanvasFrame("AVI Playback Demo");
+			fenetreFrame3.setVisible(false);
+			Fenetre.getContentPane().add(fenetreFrame3.getCanvas());
+
 			Fenetre.setVisible(true);
 
 			CvMemStorage storage = CvMemStorage.create();
+
+
+	    	KinectGrabber grabber2 = new KinectGrabber();
+	    	grabber2.start();
+
+	    	IplImage imageGrab2;
+	    	int ii = 0;
+
+			while((imageGrab2 = grabber2.grab()) != null && ii < 100)
+			{
+				fenetreFrame3.showImage(imageGrab2);
+
+				ii++;
+			}
+
+			grabber2.stop();
 
 			while((imageGrab = grabber.grab()) != null)
 			{
@@ -336,11 +352,11 @@ public class Kinect implements Runnable
 					inputs[4*i+3] = (float)i/18;
 				}
 
-				float[] outputs = fann.run(inputs);
+				//float[] outputs = fann.run(inputs);
 
 		        //System.out.println(outputs[0] +" "+ outputs[1]+ " "+outputs[2]);
 
-				if(positionLast[0] != 0)
+				/*if(positionLast[0] != 0)
 				{
 			        if(outputs[0] > 0.9)
 			        {
@@ -357,7 +373,7 @@ public class Kinect implements Runnable
 			        	textUp = "geste main gauche : en bas a gauche";
 			        	timeUp = 0;
 			        }
-				}
+				}*/
 
 		        if(textUp != "" &&  timeUp < 800)
 		        {
@@ -380,11 +396,12 @@ public class Kinect implements Runnable
 				System.out.println(-timeEnd+100+" ms");
 		    }
 
-	        fann.close();
+	        //fann.close();
 
 			grabber.stop();
 			fenetreFrame1.dispose();
 			fenetreFrame2.dispose();
+			fenetreFrame3.dispose();
 		}
 		catch (Exception e)
 		{

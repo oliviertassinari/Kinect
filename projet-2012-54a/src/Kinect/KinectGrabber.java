@@ -1,15 +1,18 @@
 package Kinect;
 
+import static com.googlecode.javacv.cpp.opencv_core.CV_MINMAX;
 import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_16U;
+import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_8U;
+import static com.googlecode.javacv.cpp.opencv_core.cvConvertScale;
+import static com.googlecode.javacv.cpp.opencv_core.cvNormalize;
 
-import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import org.OpenNI.Context;
 import org.OpenNI.DepthGenerator;
 import org.OpenNI.DepthMap;
-import org.OpenNI.DepthMetaData;
 import org.OpenNI.GeneralException;
 import org.OpenNI.License;
 import org.OpenNI.MapOutputMode;
@@ -21,7 +24,6 @@ import com.googlecode.javacv.cpp.opencv_core.IplImage;
 public class KinectGrabber
 {
 	private Context context;
-	private DepthMetaData depthMD;
 	private DepthGenerator depthGenerator;
 
 	public KinectGrabber()
@@ -29,12 +31,11 @@ public class KinectGrabber
 		try
 		{
 			context = new Context();    
-			context.addLicense(new License("PrimeSense", "0KOIk2JeIBYClPWVnMoRKn5cdY4=")); 
+			context.addLicense(new License("PrimeSense", "0KOIk2JeIBYClPWVnMoRKn5cdY4="));
+			context.setGlobalMirror(true);
 
 			depthGenerator = DepthGenerator.create(context);
-			depthGenerator.setMapOutputMode(new MapOutputMode(640, 480, 30)); 
-
-			context.setGlobalMirror(true);
+			depthGenerator.setMapOutputMode(new MapOutputMode(640, 480, 30));
 		}
 		catch(GeneralException e)
 		{
@@ -47,7 +48,6 @@ public class KinectGrabber
 		try
 		{
 			context.startGeneratingAll();
-			depthMD = depthGenerator.getMetaData();
 		}
 		catch(StatusException e)
 		{
@@ -61,68 +61,211 @@ public class KinectGrabber
 		{
 			context.waitAnyUpdateAll();
 
-			DepthMap depthM = depthMD.getData();
-		    int i = depthM.getXRes() * depthM.getYRes() * depthM.getBytesPerPixel();
-		    ByteBuffer byteBuffer = ByteBuffer.allocateDirect(i);
-		    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		    depthM.copyToBuffer(byteBuffer, i);
+			IplImage imageDepth = IplImage.create(640, 480, IPL_DEPTH_16U, 1);
+			ByteBuffer depthByteBuffer = imageDepth.getByteBuffer();
 
-		    IplImage lol = IplImage.create(depthM.getXRes(), depthM.getYRes(), IPL_DEPTH_16U, 1);
-		    ByteBuffer lolBuffer = lol.getByteBuffer();
+			DepthMap depthM = depthGenerator.getDepthMap();
+		    depthM.copyToBuffer(depthByteBuffer, 640 * 480 * 2);
 
-    		for(int x = 0; x < 640; x++)
-    		{
-    			for(int y = 0; y < 480; y++)
-    			{
-    				int srcPixelIndex = 2*x + 2*640*y;
-    				lolBuffer.put(2*x + 2*640*y, (byte)OpenCV2.getUnsignedByte(byteBuffer, srcPixelIndex));
-    				lolBuffer.put(2*x + 2*640*y+1, (byte)OpenCV2.getUnsignedByte(byteBuffer, srcPixelIndex+1));
-    			}
-    		}
-
-			return lol;
+			return fillHoleWithHistory(fillHoleWithInterpolation(scale(imageDepth)));
 		}
-		catch(StatusException e)
+		catch(GeneralException e)
 		{
 			e.printStackTrace();
 			return null;
 		}
 	}
 
-	  private BufferedImage bufToImage(ByteBuffer pixelsRGB)
-	  /* Transform the ByteBuffer of pixel data into a BufferedImage
-	     Converts RGB bytes to ARGB ints with no transparency. 
-	  */
-	  {
-	    int[] pixelInts = new int[640 * 480];
-	 
-	    int rowStart = 0;
-	        // rowStart will index the first byte (red) in each row;
-	        // starts with first row, and moves down
+	public IplImage scale(IplImage src)
+	{
+		cvNormalize(src, src, 65535, 0, CV_MINMAX, null);
 
-	    int bbIdx;               // index into ByteBuffer
-	    int i = 0;               // index into pixels int[]
-	    int rowLen = 640 * 3;    // number of bytes in each row
-	    for (int row = 0; row < 480; row++) {
-	      bbIdx = rowStart;
-	      // System.out.println("bbIdx: " + bbIdx);
-	      for (int col = 0; col < 640; col++) {
-	        int pixR = pixelsRGB.get( bbIdx++ );
-	        int pixG = pixelsRGB.get( bbIdx++ );
-	        int pixB = pixelsRGB.get( bbIdx++ );
-	        pixelInts[i++] = 
-	           0xFF000000 | ((pixR & 0xFF) << 16) | 
-	           ((pixG & 0xFF) << 8) | (pixB & 0xFF);
-	      }
-	      rowStart += rowLen;   // move to next row
-	    }
+		IplImage pImg = IplImage.create(640, 480, IPL_DEPTH_8U, 1);
+		cvConvertScale(src, pImg, 1/256.0, 0);
 
-	    // create a BufferedImage from the pixel data
-	    BufferedImage im = 
-	       new BufferedImage( 640, 480, BufferedImage.TYPE_INT_ARGB);
-	    im.setRGB( 0, 0, 640, 480, pixelInts, 0, 640 );
-	    return im;
-	  } 
+		ByteBuffer pImgByteBuffer = pImg.getByteBuffer();
+
+		for(int x = 0; x < 640; x++)
+		{
+			for(int y = 0; y < 480; y++)
+			{
+				int srcPixelIndex = x + 640*y;
+
+				if(pImgByteBuffer.get(srcPixelIndex) == 0)
+				{
+					pImgByteBuffer.put(x + 640*y, (byte)255);
+				}
+			}
+		}
+
+		return pImg;
+	}
+
+	public IplImage fillHoleWithInterpolation(IplImage src)
+	{
+		IplImage dst = src.clone();
+		ByteBuffer dstByteBuffer = dst.getByteBuffer();
+
+		ByteBuffer srcByteBuffer = src.getByteBuffer();
+
+		int innerBandThreshold = 2;
+		int outerBandThreshold = 5;
+
+		// We will be using these numbers for constraints on indexes
+		int widthBound = 640 - 1;
+		int heightBound = 480 - 1;
+
+		for(int x = 0; x < 640; x++)
+		{
+			for(int y = 0; y < 480; y++)
+			{
+				int depthIndex = x + (y * 640);
+
+		    // We are only concerned with eliminating 'white' noise from the data.
+		    // We consider any pixel with a depth of 255 as a possible candidate for filtering.
+		    if(OpenCV2.getUnsignedByte(srcByteBuffer, depthIndex) == 255) //White
+		    {
+		      // The filter collection is used to count the frequency of each
+		      // depth value in the filter array. This is used later to determine
+		      // the statistical mode for possible assignment to the candidate.
+		      int[][] filterCollection = new int[24][2];
+
+		      // The inner and outer band counts are used later to compare against the threshold 
+		      // values set in the UI to identify a positive filter result.
+		      int innerBandCount = 0;
+		      int outerBandCount = 0;
+
+		      // The following loops will loop through a 5 X 5 matrix of pixels surrounding the 
+		      // candidate pixel. This defines 2 distinct 'bands' around the candidate pixel.
+		      // If any of the pixels in this matrix are non-0, we will accumulate them and count
+		      // how many non-0 pixels are in each band. If the number of non-0 pixels breaks the
+		      // threshold in either band, then the average of all non-0 pixels in the matrix is applied
+		      // to the candidate pixel.
+		      for(int yi = -2; yi < 3; yi++)
+		      {
+		    	  for(int xi = -2; xi < 3; xi++)
+		    	  {
+		          // yi and xi are modifiers that will be subtracted from and added to the
+		          // candidate pixel's x and y coordinates that we calculated earlier. From the
+		          // resulting coordinates, we can calculate the index to be addressed for processing.
+
+		          // We do not want to consider the candidate
+		          // pixel (xi = 0, yi = 0) in our process at this point.
+		          // We already know that it's 0
+		          if(xi != 0 || yi != 0)
+		          {
+		            // We then create our modified coordinates for each pass
+		            int xSearch = x + xi;
+		            int ySearch = y + yi;
+
+		            // While the modified coordinates may in fact calculate out to an actual index, it 
+		            // might not be the one we want. Be sure to check
+		            // to make sure that the modified coordinates
+		            // match up with our image bounds.
+		            if(xSearch >= 0 && xSearch <= widthBound && ySearch >= 0 && ySearch <= heightBound)
+		            {
+		              int index = xSearch + (ySearch * 640);
+		              // We only want to look for non-0 values
+		              if(OpenCV2.getUnsignedByte(srcByteBuffer, index) != 255)
+		              {
+		                // We want to find count the frequency of each depth
+		                for(int i = 0; i < 24; i++)
+		                {
+		                  if(filterCollection[i][0] == OpenCV2.getUnsignedByte(srcByteBuffer, index))
+		                  {
+		                    // When the depth is already in the filter collection
+		                    // we will just increment the frequency.
+		                    filterCollection[i][1]++;
+		                    break;
+		                  }
+		                  else if (filterCollection[i][0] == 0)
+		                  {
+		                    // When we encounter a 0 depth in the filter collection
+		                    // this means we have reached the end of values already counted.
+		                    // We will then add the new depth and start it's frequency at 1.
+		                    filterCollection[i][0] = OpenCV2.getUnsignedByte(srcByteBuffer, index);
+		                    filterCollection[i][1]++;
+		                    break;
+		                  }
+		                }
+
+		                // We will then determine which band the non-0 pixel
+		                // was found in, and increment the band counters.
+		                if (yi != 2 && yi != -2 && xi != 2 && xi != -2)
+		                  innerBandCount++;
+		                else
+		                  outerBandCount++;
+		              }
+		            }
+		          }
+		        }
+		      }
+
+		      // Once we have determined our inner and outer band non-zero counts, and 
+		      // accumulated all of those values, we can compare it against the threshold
+		      // to determine if our candidate pixel will be changed to the
+		      // statistical mode of the non-zero surrounding pixels.
+		      if(innerBandCount >= innerBandThreshold || outerBandCount >= outerBandThreshold)
+		      {
+		        int frequency = 0;
+		        int depth = 0;
+		        // This loop will determine the statistical mode
+		        // of the surrounding pixels for assignment to
+		        // the candidate.
+		        for(int i = 0; i < 24; i++)
+		        {
+		          // This means we have reached the end of our
+		          // frequency distribution and can break out of the
+		          // loop to save time.
+		          if (filterCollection[i][0] == 0)
+		            break;
+		          if (filterCollection[i][1] > frequency)
+		          {
+		            depth = filterCollection[i][0];
+		            frequency = filterCollection[i][1];
+		          }
+		        }
+		 
+		        dstByteBuffer.put(depthIndex, (byte)depth);
+		      }
+		    }
+		  }
+		}
+
+		return dst;
+	}
+
+	public IplImage save = null;
+
+	public IplImage fillHoleWithHistory(IplImage src)
+	{
+		IplImage tmp = src.clone();
+
+		if(save != null)
+		{
+			ByteBuffer saveByteBuffer = save.getByteBuffer();
+			ByteBuffer srcByteBuffer = src.getByteBuffer();
+
+			for(int x = 0; x < 640; x++)
+			{
+				for(int y = 0; y < 480; y++)
+				{
+					int srcPixelIndex = x + 640*y;
+
+					if(srcByteBuffer.get(srcPixelIndex) == -1) //255
+					{
+						srcByteBuffer.put(x + 640*y, saveByteBuffer.get(srcPixelIndex));
+					}
+				}
+			}
+		}
+
+		save = tmp;
+
+		return src;
+	}
+	
+	private Queue<IplImage> imageQueue = new LinkedList<IplImage>();
 	
 	public void stop()
 	{

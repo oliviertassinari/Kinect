@@ -4,7 +4,6 @@ import static com.googlecode.javacv.cpp.opencv_core.*;
 import static com.googlecode.javacv.cpp.opencv_imgproc.*;
 
 import java.awt.GridLayout;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -13,6 +12,8 @@ import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.CanvasFrame;
 import com.googlecode.javacv.FrameGrabber.Exception;
 import com.googlecode.javacv.OpenCVFrameGrabber;
+import com.googlecode.javacv.OpenKinectFrameGrabber;
+import com.googlecode.javacv.VideoInputFrameGrabber;
 import com.googlecode.javacv.cpp.opencv_core.CvBox2D;
 import com.googlecode.javacv.cpp.opencv_core.CvContour;
 import com.googlecode.javacv.cpp.opencv_core.CvFont;
@@ -22,6 +23,7 @@ import com.googlecode.javacv.cpp.opencv_core.CvScalar;
 import com.googlecode.javacv.cpp.opencv_core.CvSeq;
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 import com.googlecode.javacv.cpp.opencv_imgproc.CvConvexityDefect;
+
 
 public class Traitement implements Runnable
 {
@@ -47,18 +49,11 @@ public class Traitement implements Runnable
 	{
 		try
 		{
-			//Fann fann = new Fann("ann/geste.net");
-
-	        int timeUp = 0;
-	        String textUp = "";
-
 	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test1.mkv");
 	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test2.mpg");
-	    	OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact42_test1.mkv");
+	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact42_test1.mkv");
 	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test2.mkv");
-
-	        //OpenKinectFrameGrabber grabber = new OpenKinectFrameGrabber(0);
-	        //grabber.setFormat("depth");
+	        KinectGrabber grabber = new KinectGrabber();
 
 			grabber.start();
 
@@ -70,12 +65,11 @@ public class Traitement implements Runnable
 	    	double[] minVal = new double[1];
 	    	double[] maxVal = new double[1];
 
-
 	    	// creation window used to display the video, the object in JavaCv can use the material acceleration
 	    	JFrame Fenetre = new JFrame();
 			Fenetre.setLayout(new GridLayout(1, 2));
 			Fenetre.setTitle("module JavaCV");
-			Fenetre.setSize(width*3+20, height);
+			Fenetre.setSize(width*2+20, height);
 			Fenetre.setLocationRelativeTo(null);
 			Fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -87,197 +81,67 @@ public class Traitement implements Runnable
 			fenetreFrame2.setVisible(false);
 			Fenetre.getContentPane().add(fenetreFrame2.getCanvas());
 
-			CanvasFrame fenetreFrame3 = new CanvasFrame("AVI Playback Demo");
-			fenetreFrame3.setVisible(false);
-			Fenetre.getContentPane().add(fenetreFrame3.getCanvas());
-
 			Fenetre.setVisible(true);
 
 			CvMemStorage storage = CvMemStorage.create();
 
-
-	    	KinectGrabber grabber2 = new KinectGrabber();
-	    	grabber2.start();
-
-	    	IplImage imageGrab2;
-	    	int ii = 0;
-
-			while((imageGrab2 = grabber2.grab()) != null && ii < 100)
-			{
-				fenetreFrame3.showImage(imageGrab2);
-
-				ii++;
-			}
-
-			grabber2.stop();
+			// OpenCV2.cv2Smooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
+			// OpenCV2.cv2MinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
+			// OpenCV2.cv2Threshold(imageTraitement, imageThreshold, minVal[0] + 4*isFind, 255, CV_THRESH_BINARY);
+			// contour = OpenCV2.cv3FindContours(imageTraitement, storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+			// OpenCV2.cv2Threshold(imageTraitement, imageThreshold, minVal[0] + 4*isFind, 255, CV_THRESH_BINARY);
+			// double aire = OpenCV2.cv2ContourArea(contour, CV_WHOLE_SEQ, 0);
+			// OpenCV2.cv2DrawContours(imageDislay2, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
 
 			while((imageGrab = grabber.grab()) != null)
 			{
-				  /*informations pratiques:
-				  les images en couleurs sont la plupart du temps représentées sous forme d'un ensemble de 
-				  valeurs codées sur 8 bits, représentant par exemple l'intensité de rouge, vert et bleu d'un pixel
-				  
-				  Travail biblio #1: formats de représentation des images dans le domaine non-compréssé: RGB, YYV, ...
-				  
-				  on suppose dans cet exemple que le format de l'image est RGB non compréssé, échantillonné sur 24 bits. 
-				  Chaque pixel de l'image est représenté par 24 bits donnant dans l'ordre la composante Bleu, Verte et Rouge du pixel 
-				  (l'inversion bleu/rouge est lié au format AVI non compréssé)
-				  L'image est alors représentée en mémoire comme une succession de pixels, stockés ligne par ligne, comme suit :
-				    en bits: 
-				  BBBBBBBBGGGGGGGGRRRRRRRRBBBBBBBBGGGGGGGGRRRRRRRRBBBBBBBBGGGGGGGGRRRRRRRRBBBBBBBBGGGGGGGGRRRRRRRR ....
-				    ou en octets:
-				  BGRBGRBGR ....
-				  
-				  afin de manipuler les pixels de l'image, nous devons
-				  1- récupérer les données de pixels présents dans la mémoire
-				  2- localiser le pixel
-				*/
-				
-				/*1 - on récupére la mémoire où sont stoqués les pixels*/
-				//ByteBuffer rgb_data = imageTraitement.getByteBuffer();
-				
-				/*2 - La mémoire des pixels étant construite de manière linéaire, afin de sauter une ligne entière de pixels 
-				il faut aller width pixels plus loin. Comme chaque pixel est codé sur 1 octet, cela revient à 
-				sauter 3*width pixels. Cette valeur s'appelle "stride" ou "pitch" de l'image", et est aussi acessible 
-				dans la fonction IplImage.widthStep()
-				
-				Note: certains formats d'images utilisent un pitch supérieur à la largeur des images en pixels (pour
-				d'obscures raisons qui ne nous concernent pas dans ce module), vous ne devriez pas avoir à voue en occuper.
-				
-				Le même raisonement vaut pour le déplacement horizontal de pixel.
-				
-				    Par exemple, pour accéder accéder au pixel 30 horizontal et 20 vertical:
-				*/
-				//int pixel_index = 3*30 + 3*width*20;
-				
-				/*3 - lire la composante bleu de notre pixel*/
-				//int blue_value = rgb_data.get(pixel_index);
-				/*ATTENTION!! Pour Java, le type Byte est toujours signé, donc une valeur non signée dans l'image de 200 est 
-				en fait lue par cette fonction comme 200 = 0b11001000 -> signé (bit de poid fort mis)
-				-> 0b11111111 - 0b11001000 = -55  !!!
-				Ceci est propre à Java et à la manipulation des pixels via des bytes 
-				Vous n'aurez pas le même problème dans d'autres langages ou en utilisant les autres "buffer" fourni
-				par l'objet IplImage, mais ces methodes sont moins rapides. 
-				
-				La correction s'écrit donc:
-				*/
-				//if (blue_value < 0 ) blue_value = 255 + blue_value;
-				
-				/*4 - mettre la composante verte à 0 pour ce même pixel (ou +2 pour la composante rouge */
-				//rgb_data.put(pixel_index + 1, (byte) 0);
-				
-				
-				 /*Exercices: 
-				  0- (optionnel mais amusant) utilisez la WebCam au lieu d'un fichier video
-				  1- saturez la composante ROUGE de chaque image à pleine intensité
-				  2- saturez la composante bleu du quart inférieur droit de l'image à pleine intensité
-				  3- effectuez les mêmes manipulations avec deux CanvasFrame, l'un pour l'image originale, l'autre pour l'image modifiée
-				      Regardez la documentation d'IplImage pour créer une nouvelle image vide
-				  4- seuillez les pixels à noir si l'intensité du vert dépasse 50%
-				  5- identifiez les pixels qui peuvent faire partie d'une zone de la peau (ou autre critère) et effacez tous les autres pixels
-				  6- identifiez les différentes régions dans l'exercice précédent, et déssinez un rectangle de couleur autour de chaque région
-				
-				  Travail biblio #2: quels outils pour la detection de région (segmentation par région) ? 
-				
-				 NOTE: pour ces exercices, vous devrez coder les algorithmes vous-memes (e.g. interdit d'utilser cvFindContour ...)
-				 une fois l'algorithme codé, vous avez le droit d'utiliser la version OpenCV equivalente si elle existe afin 
-				 de comparer les performances de vos algorithmes avec JavaCV
-				 
-				 Votre code sera bien entendu rendu disponible sous le GIT de votre projet pact, et vous aurez la sympathique attention de 
-				 prévenir votre expert JavaCV de l'endroit où il peut trouver le code.
-				 */
-	
-				//Exercie 1
-				/*ByteBuffer imageGrabBuffer = imageGrab.getByteBuffer();
-	    		for(int x = 0; x < width; x++)
-	    		{
-	    			for(int y = 0; y < height; y++)
-	    			{
-	    				imageGrabBuffer.put(3*x + 3*width*y, (byte) 255);
-	    			}
-	    		}*/
-				
-				//Exercice 2
-				/*ByteBuffer imageGrabBuffer = imageGrab.getByteBuffer();
-	    		for(int x = (int)(width/2); x < width; x++)
-	    		{
-	    			for(int y = (int)(height/2); y < height; y++)
-	    			{
-	    				imageGrabBuffer.put(3*x + 3*width*y + 2, (byte) 255);
-	    			}
-	    		}*/
-	
-				//Exercice 4
-				/*ByteBuffer imageGrabBuffer = imageGrab.getByteBuffer();
-	    		for(int x = 0; x < width; x++)
-	    		{
-	    			for(int y = 0; y < height; y++)
-	    			{
-	    				if(getUnsignedByte(imageGrabBuffer, 3*x + 3*width*y + 1) > (int)(255/2))
-	    				{
-	    					imageGrabBuffer.put(3*x + 3*width*y, (byte) 255);
-	    					imageGrabBuffer.put(3*x + 3*width*y + 1, (byte) 255);
-	    					imageGrabBuffer.put(3*x + 3*width*y + 2, (byte) 255);
-	    				}
-	    			}
-	    		}*/	
-
-				//Exercice 5 - 6
-
 				timeLastGrab = System.currentTimeMillis();
 
-				imageTraitement = IplImage.create(width, height, IPL_DEPTH_8U, 1);
-	//        	cv2CvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
-	        	cvCvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
+				IplImage imageDislay2 = IplImage.create(width, height, IPL_DEPTH_8U, 3);
+				cvCvtColor(imageGrab, imageDislay2, CV_GRAY2RGB);
 
-	//        	cv2LUT(imageTraitement, imageTraitement);
+				imageTraitement = imageGrab.clone();
 
-	//         	cv2Smooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
-	        	cvSmooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
+	        	cvSmooth(imageTraitement, imageTraitement, CV_BLUR, 3);
 
 	        	IplImage imageThreshold = imageTraitement.clone();
 
-	//        	cv2MinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
 	        	cvMinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
 
 	        	int isFind = 1;
 	        	ArrayList<CvPoint> centerList = new ArrayList<CvPoint>();
 
-	        	while(isFind != 0 && isFind < 3) //2 it�rations max
+	        	while(isFind != 0 && isFind < 3) //2 iterations max
 	        	{
 	        		isFind++;
 
-		//        	cv2Threshold(imageTraitement, imageThreshold, minVal[0] + 15*isFind, 255, CV_THRESH_BINARY);
-		        	cvThreshold(imageTraitement, imageThreshold, minVal[0] + 15*isFind, 255, CV_THRESH_BINARY);
+		        	cvThreshold(imageTraitement, imageThreshold, minVal[0] + 4*isFind, 255, CV_THRESH_BINARY);
 
-		        	cvCircle(imageGrab, minPoint, 3, CvScalar.YELLOW, -1, 8, 0);
+		        	cvCircle(imageDislay2, minPoint, 3, CvScalar.YELLOW, -1, 8, 0);
 
 		        	CvSeq contour = new CvSeq();
 		         	cvFindContours(imageThreshold.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
-		 //       	contour = cv3FindContours(imageTraitement, storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 
 		            while(contour != null && !contour.isNull())
 		            {
 		            	if(contour.elem_size() > 0)
 		                {
 		            		double aire = cvContourArea(contour, CV_WHOLE_SEQ, 0);
-		 //               	double aire = cv2ContourArea(contour, CV_WHOLE_SEQ, 0);
 
-		                	if(aire > 50 && aire < 100000)
+		                	if(aire > 400 && aire < 24000)
 		                	{
 		                		isFind = 0; //true
 
-		                		cvDrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
-		//	                	cv2DrawContours(imageGrab, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
+		                		cvDrawContours(imageDislay2, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
 
 		                	    CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.015, 0);
-		                		cvDrawContours(imageGrab, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
+		                		cvDrawContours(imageDislay2, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
 
 		                		CvSeq convex = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 1);
-		                		cvDrawContours(imageGrab, convex, CvScalar.RED, CvScalar.RED, -1, 1, CV_AA);
+		                		cvDrawContours(imageDislay2, convex, CvScalar.RED, CvScalar.RED, -1, 1, CV_AA);
 
 		                		CvPoint centre = getContourCenter(convex, storage);
-		                		cvCircle(imageGrab, centre, 3, CvScalar.RED, -1, 8, 0);
+		                		cvCircle(imageDislay2, centre, 3, CvScalar.RED, -1, 8, 0);
 
 		                		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
 		                		CvSeq defect = cvConvexityDefects(contour, hull, storage);
@@ -290,9 +154,9 @@ public class Traitement implements Runnable
 	
 		                    			 if(convexityDefect.depth() > 10)
 		                    			 {
-			                    			 cvCircle(imageGrab, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
-			                    			 cvCircle(imageGrab, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
-			                    			 cvCircle(imageGrab, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
+			                    			 cvCircle(imageDislay2, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
+			                    			 cvCircle(imageDislay2, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
+			                    			 cvCircle(imageDislay2, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
 	
 			                    			 //System.out.println(convexityDefect.depth());
 		                    			 }
@@ -312,100 +176,38 @@ public class Traitement implements Runnable
 	        	getPositionFiltreHand();
 	        	reconnaissanceDeMvt();
 
-	    		cvCircle(imageGrab, new CvPoint((int)mainPositionFiltreLeft.get(0)[1], (int)mainPositionFiltreLeft.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
-	    		cvCircle(imageGrab, new CvPoint((int)mainPositionFiltreRight.get(0)[1], (int)mainPositionFiltreRight.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
+	    		cvCircle(imageDislay2, new CvPoint((int)mainPositionFiltreLeft.get(0)[1], (int)mainPositionFiltreLeft.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
+	    		cvCircle(imageDislay2, new CvPoint((int)mainPositionFiltreRight.get(0)[1], (int)mainPositionFiltreRight.get(0)[2]), 3, CvScalar.BLACK, -1, 8, 0);
 
 				CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.6, 1); 
 
 				if(mainPositionLeft.get(0)[0] == timeLastGrab)
 				{
-					cvPutText(imageGrab, "Gauche", cvPoint((int)mainPositionLeft.get(0)[1]-20, (int)mainPositionLeft.get(0)[2]-10), font, CvScalar.BLUE);
+					cvPutText(imageDislay2, "Gauche", cvPoint((int)mainPositionLeft.get(0)[1]-20, (int)mainPositionLeft.get(0)[2]-10), font, CvScalar.BLUE);
 				}
 				if(mainPositionRight.get(0)[0] == timeLastGrab)
 				{
-					cvPutText(imageGrab, "Droite", cvPoint((int)mainPositionRight.get(0)[1]-20, (int)mainPositionRight.get(0)[2]-10), font, CvScalar.RED);
+					cvPutText(imageDislay2, "Droite", cvPoint((int)mainPositionRight.get(0)[1]-20, (int)mainPositionRight.get(0)[2]-10), font, CvScalar.RED);
 				}
-
-				String out = "";
-				long[] positionLast = mainPositionLeft.get(19);
-
-				for(int i = 0; i < 19; i++)
-				{
-		    		long[] position = mainPositionLeft.get(i);
-		    		long[] position2 = mainPositionLeft.get(i+1);
-	
-		    		out += ((float)(position[1]-position2[1])/400)+" "+((float)(position[2]-position2[2])/400)+" "+((float)(position[3]-position2[3])/400)+" "+((float)i/18)+" ";
-				}
-
-				//System.out.println(out);
-
-		        float[] inputs = new float[76];
-
-				for(int i = 0; i < 19; i++)
-				{
-		    		long[] position = mainPositionLeft.get(i);
-		    		long[] position2 = mainPositionLeft.get(i+1);
-
-					inputs[4*i] = (float)(position[1]-position2[1])/400;
-					inputs[4*i+1] = (float)(position[2]-position2[2])/400;
-					inputs[4*i+2] = (float)(position[3]-position2[3])/400;
-					inputs[4*i+3] = (float)i/18;
-				}
-
-				//float[] outputs = fann.run(inputs);
-
-		        //System.out.println(outputs[0] +" "+ outputs[1]+ " "+outputs[2]);
-
-				/*if(positionLast[0] != 0)
-				{
-			        if(outputs[0] > 0.9)
-			        {
-			        	textUp = "geste main gauche : en bas";
-			        	timeUp = 0;
-			        }
-			        else if(outputs[1] > 0.9)
-			        {
-			        	textUp = "geste main gauche : a gauche";
-			        	timeUp = 0;
-			        }
-			        else if(outputs[2] > 0.9)
-			        {
-			        	textUp = "geste main gauche : en bas a gauche";
-			        	timeUp = 0;
-			        }
-				}*/
-
-		        if(textUp != "" &&  timeUp < 800)
-		        {
-		        	timeUp += 100;
-		        	cvPutText(imageGrab, textUp, cvPoint(20, 20), font, CvScalar.BLACK);
-		        }
 
 				fenetreFrame1.showImage(imageThreshold);
-				fenetreFrame2.showImage(imageGrab);
+				fenetreFrame2.showImage(imageDislay2);
 
 				cvClearMemStorage(storage);
 
-				long timeEnd = 100-(int)(System.currentTimeMillis()-timeLastGrab);
+				long timeEnd = 50-(int)(System.currentTimeMillis()-timeLastGrab);
 	
 				if(timeEnd > 0)
 				{
 					Thread.sleep(timeEnd);
 				}
 
-				System.out.println(-timeEnd+100+" ms");
+				System.out.println(-timeEnd+50+" ms");
 		    }
-
-	        //fann.close();
 
 			grabber.stop();
 			fenetreFrame1.dispose();
 			fenetreFrame2.dispose();
-			fenetreFrame3.dispose();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
 		}
 		catch(InterruptedException e)
 		{
@@ -423,12 +225,12 @@ public class Traitement implements Runnable
 
 		if(centreLeft[0] == 0 && centreRight[0] == 0) //Vide
 		{
-			if(centerList.size() == 1) //1 centre d�tect�
+			if(centerList.size() == 1) //1 centre detecte
 			{
 				CvPoint centre = centerList.get(0);
 				mainPosition.add(timeLastGrab, centre, getDepth(centre), 0);
 			}
-			else
+			else if(centerList.size() > 1)
 			{
     			CvPoint centre1 = centerList.get(0);
     			CvPoint centre2 = centerList.get(1);

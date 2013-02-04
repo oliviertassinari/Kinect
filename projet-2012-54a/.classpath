@@ -2,9 +2,9 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/JavaCV"/>
-	<classpathentry kind="lib" path="lib/fannj-0.6.jar"/>
 	<classpathentry kind="lib" path="C:/Program Files/OpenNI/Bin64/org.OpenNI.jar"/>
-	<classpathentry kind="lib" path="lib/jna-3.5.1.jar"/>
+	<classpathentry kind="lib" path="lib/javacpp.jar"/>
+	<classpathentry kind="lib" path="lib/javacv-windows-x86_64.jar"/>
+	<classpathentry kind="lib" path="lib/javacv.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

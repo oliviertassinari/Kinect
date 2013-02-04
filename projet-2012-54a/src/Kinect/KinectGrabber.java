@@ -78,12 +78,12 @@ public class KinectGrabber
 
 	public IplImage scale(IplImage src)
 	{
-		cvNormalize(src, src, 65535, 0, CV_MINMAX, null);
+		cvNormalize(src, src, -8000, 65535, CV_MINMAX, null);
 
-		IplImage pImg = IplImage.create(640, 480, IPL_DEPTH_8U, 1);
-		cvConvertScale(src, pImg, 1/256.0, 0);
+		IplImage dst = IplImage.create(640, 480, IPL_DEPTH_8U, 1);
+		cvConvertScale(src, dst, 1/256.0, 0);
 
-		ByteBuffer pImgByteBuffer = pImg.getByteBuffer();
+		ByteBuffer dstByteBuffer = dst.getByteBuffer();
 
 		for(int x = 0; x < 640; x++)
 		{
@@ -91,14 +91,14 @@ public class KinectGrabber
 			{
 				int srcPixelIndex = x + 640*y;
 
-				if(pImgByteBuffer.get(srcPixelIndex) == 0)
+				if(dstByteBuffer.get(srcPixelIndex) == 0)
 				{
-					pImgByteBuffer.put(x + 640*y, (byte)255);
+					dstByteBuffer.put(x + 640*y, (byte)255);
 				}
 			}
 		}
 
-		return pImg;
+		return dst;
 	}
 
 	public IplImage fillHoleWithInterpolation(IplImage src)
@@ -117,115 +117,90 @@ public class KinectGrabber
 			{
 				int depthIndex = x + (y * 640);
 
-		    // We are only concerned with eliminating 'white' noise from the data.
-		    // We consider any pixel with a depth of 255 as a possible candidate for filtering.
-		    if(OpenCV2.getUnsignedByte(srcByteBuffer, depthIndex) == 255) //White
-		    {
-		      // The filter collection is used to count the frequency of each
-		      // depth value in the filter array. This is used later to determine
-		      // the statistical mode for possible assignment to the candidate.
-		      int[][] filterCollection = new int[49][2];
+			    if(srcByteBuffer.get(depthIndex) == -1) // White
+			    {
+			    	int[][] filterCollection = new int[49][2];
+	
+			    	int innerBandCount = 0;
+			    	int outerBandCount = 0;
 
-		      // The inner and outer band counts are used later to compare against the threshold 
-		      // values set in the UI to identify a positive filter result.
-		      int innerBandCount = 0;
-		      int outerBandCount = 0;
+			    	for(int yi = -2; yi < 3; yi++)
+			    	{
+			    		for(int xi = -2; xi < 3; xi++)
+			    		{
+			    			if(xi != 0 || yi != 0)
+			    			{
+			    				int xSearch = x + xi;
+			    				int ySearch = y + yi;
 
-		      // The following loops will loop through a 5 X 5 matrix of pixels surrounding the 
-		      // candidate pixel. This defines 2 distinct 'bands' around the candidate pixel.
-		      // If any of the pixels in this matrix are non-0, we will accumulate them and count
-		      // how many non-0 pixels are in each band. If the number of non-0 pixels breaks the
-		      // threshold in either band, then the average of all non-0 pixels in the matrix is applied
-		      // to the candidate pixel.
-		      for(int yi = -3; yi < 4; yi++)
-		      {
-		    	  for(int xi = -3; xi < 4; xi++)
-		    	  {
-		          // yi and xi are modifiers that will be subtracted from and added to the
-		          // candidate pixel's x and y coordinates that we calculated earlier. From the
-		          // resulting coordinates, we can calculate the index to be addressed for processing.
+			    				if(xSearch >= 0 && xSearch < 640 && ySearch >= 0 && ySearch < 480)
+			    				{
+			    					int index = xSearch + (ySearch * 640);
 
-		          // We do not want to consider the candidate
-		          // pixel (xi = 0, yi = 0) in our process at this point.
-		          // We already know that it's 0
-		          if(xi != 0 || yi != 0)
-		          {
-		            // We then create our modified coordinates for each pass
-		            int xSearch = x + xi;
-		            int ySearch = y + yi;
+			    					if(srcByteBuffer.get(index) != -1) // White
+			    					{
+			    						// We want to find count the frequency of each depth
+			    						for(int i = 0; i < 24; i++)
+			    						{
+			    							if(filterCollection[i][0] == srcByteBuffer.get(index))
+			    							{
+			    								// When the depth is already in the filter collection
+			    								filterCollection[i][1]++;
+			    								break;
+			    							}
+			    							else if (filterCollection[i][0] == 0)
+			    							{
+			    								// We will then add the new depth and start it's frequency at 1.
+			    								filterCollection[i][0] = srcByteBuffer.get(index);
+			    								filterCollection[i][1]++;
+			    								break;
+			    							}
+			    						}
 
-		            // While the modified coordinates may in fact calculate out to an actual index, it 
-		            // might not be the one we want. Be sure to check
-		            // to make sure that the modified coordinates
-		            // match up with our image bounds.
-		            if(xSearch >= 0 && xSearch < 640 && ySearch >= 0 && ySearch < 480)
-		            {
-		              int index = xSearch + (ySearch * 640);
-		              // We only want to look for non-0 values
-		              if(OpenCV2.getUnsignedByte(srcByteBuffer, index) != 255)
-		              {
-		                // We want to find count the frequency of each depth
-		                for(int i = 0; i < 49; i++)
-		                {
-		                  if(filterCollection[i][0] == OpenCV2.getUnsignedByte(srcByteBuffer, index))
-		                  {
-		                    // When the depth is already in the filter collection
-		                    // we will just increment the frequency.
-		                    filterCollection[i][1]++;
-		                    break;
-		                  }
-		                  else if (filterCollection[i][0] == 0)
-		                  {
-		                    // When we encounter a 0 depth in the filter collection
-		                    // this means we have reached the end of values already counted.
-		                    // We will then add the new depth and start it's frequency at 1.
-		                    filterCollection[i][0] = OpenCV2.getUnsignedByte(srcByteBuffer, index);
-		                    filterCollection[i][1]++;
-		                    break;
-		                  }
-		                }
+			    						// We will then determine which band the non-0 pixel
+			    						if(yi != 2 && yi != -2 && xi != 2 && xi != -2)
+			    						{
+			    							innerBandCount++;
+			    						}
+			    						else
+			    						{
+			    							outerBandCount++;
+			    						}
+			    					}
+			    				}
+			    			}
+			    		}
+			    	}
 
-		                // We will then determine which band the non-0 pixel
-		                // was found in, and increment the band counters.
-		                if (yi != 3 && yi != -3 && xi != 3 && xi != -3)
-		                  innerBandCount++;
-		                else
-		                  outerBandCount++;
-		              }
-		            }
-		          }
-		        }
-		      }
+			    	// Once we have determined our inner and outer band non-zero counts, and 
+			    	// accumulated all of those values, we can compare it against the threshold
+			    	// to determine if our candidate pixel will be changed to the
+			    	// statistical mode of the non-zero surrounding pixels.
+			    	if(innerBandCount >= innerBandThreshold || outerBandCount >= outerBandThreshold)
+			    	{
+			    		int frequency = 0;
+			    		int depth = 0;
+	  
+			    		// This loop will determine the statistical mode
+			    		// of the surrounding pixels for assignment to
+			    		// the candidate.
+			    		for(int i = 0; i < 24; i++)
+			    		{
+			    			if(filterCollection[i][0] == 0)
+			    			{
+			    				break;
+			    			}
+			    			if(filterCollection[i][1] > frequency)
+			    			{
+			    				depth = filterCollection[i][0];
+			    				frequency = filterCollection[i][1];
+			    			}
+			    		}
 
-		      // Once we have determined our inner and outer band non-zero counts, and 
-		      // accumulated all of those values, we can compare it against the threshold
-		      // to determine if our candidate pixel will be changed to the
-		      // statistical mode of the non-zero surrounding pixels.
-		      if(innerBandCount >= innerBandThreshold || outerBandCount >= outerBandThreshold)
-		      {
-		        int frequency = 0;
-		        int depth = 0;
-		        // This loop will determine the statistical mode
-		        // of the surrounding pixels for assignment to
-		        // the candidate.
-		        for(int i = 0; i < 24; i++)
-		        {
-		          // This means we have reached the end of our
-		          // frequency distribution and can break out of the
-		          // loop to save time.
-		          if (filterCollection[i][0] == 0)
-		            break;
-		          if (filterCollection[i][1] > frequency)
-		          {
-		            depth = filterCollection[i][0];
-		            frequency = filterCollection[i][1];
-		          }
-		        }
-		 
-		        dstByteBuffer.put(depthIndex, (byte)depth);
-		      }
-		    }
-		  }
+			    		dstByteBuffer.put(depthIndex, (byte)depth);
+			    	}
+			    }
+			}
 		}
 
 		return dst;

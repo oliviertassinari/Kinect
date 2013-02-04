@@ -5,6 +5,8 @@ import static com.googlecode.javacv.cpp.opencv_imgproc.*;
 
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import javax.swing.JFrame;
 
@@ -39,6 +41,7 @@ public class Traitement implements Runnable
 	private long timeLastGrab;
 	private OneEuroFilter filtreLeft = new OneEuroFilter(0.033, 5.0, 0.02, 1.0);
 	private OneEuroFilter filtreRight = new OneEuroFilter(0.033, 5.0, 0.02, 1.0);
+	private long[] timeList = new long[3];
 
 	public Traitement()
     {
@@ -70,7 +73,7 @@ public class Traitement implements Runnable
 	    	JFrame Fenetre = new JFrame();
 			Fenetre.setLayout(new GridLayout(1, 2));
 			Fenetre.setTitle("module JavaCV");
-			Fenetre.setSize(width*2+20, height);
+			Fenetre.setSize(width*2+40, height+60);
 			Fenetre.setLocationRelativeTo(null);
 			Fenetre.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -191,6 +194,12 @@ public class Traitement implements Runnable
 					cvPutText(imageDislay2, "Droite", cvPoint((int)mainPositionRight.get(0)[1]-20, (int)mainPositionRight.get(0)[2]-10), font, CvScalar.RED);
 				}
 
+	        	CvFont fontFPS = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.5, 1); 
+				cvPutText(imageDislay2, "FPS : "+Integer.toString(getFPS()), cvPoint(10, 430), fontFPS, CvScalar.BLACK);
+
+				IplImage resizeDisplay = IplImage.create(width/2, height/2, IPL_DEPTH_8U, 3);
+				//cvResize(imageDislay2, resizeDisplay);
+
 				fenetreFrame1.showImage(imageThreshold);
 				fenetreFrame2.showImage(imageDislay2);
 
@@ -203,7 +212,7 @@ public class Traitement implements Runnable
 					Thread.sleep(timeEnd);
 				}
 
-				System.out.println(-timeEnd+33+" ms");
+				//System.out.println(-timeEnd+33+" ms");
 		    }
 
 			grabber.stop();
@@ -443,6 +452,18 @@ public class Traitement implements Runnable
     	{
     		//System.out.println("non stable "+ct1);
     	}
+    }
+  
+    public int getFPS()
+    {
+    	for(int i = timeList.length-1; i > 0; i--)
+    	{
+    		timeList[i] = timeList[i-1];
+    	}
+
+    	timeList[0] = System.currentTimeMillis();
+
+    	return (int)(2000/(float)((timeList[0] - timeList[2])));
     }
 
     public CvPoint getContourCenter(CvSeq contour, CvMemStorage storage)

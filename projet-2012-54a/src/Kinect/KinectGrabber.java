@@ -67,7 +67,7 @@ public class KinectGrabber
 			DepthMap depthM = depthGenerator.getDepthMap();
 		    depthM.copyToBuffer(depthByteBuffer, 640 * 480 * 2);
 
-			return fillHoleWithHistory(fillHoleWithInterpolation(scale(imageDepth)));
+			return fillHoleWithInterpolation(scale(imageDepth));
 		}
 		catch(GeneralException e)
 		{
@@ -111,10 +111,6 @@ public class KinectGrabber
 		int innerBandThreshold = 2;
 		int outerBandThreshold = 5;
 
-		// We will be using these numbers for constraints on indexes
-		int widthBound = 640 - 1;
-		int heightBound = 480 - 1;
-
 		for(int x = 0; x < 640; x++)
 		{
 			for(int y = 0; y < 480; y++)
@@ -128,7 +124,7 @@ public class KinectGrabber
 		      // The filter collection is used to count the frequency of each
 		      // depth value in the filter array. This is used later to determine
 		      // the statistical mode for possible assignment to the candidate.
-		      int[][] filterCollection = new int[24][2];
+		      int[][] filterCollection = new int[49][2];
 
 		      // The inner and outer band counts are used later to compare against the threshold 
 		      // values set in the UI to identify a positive filter result.
@@ -141,9 +137,9 @@ public class KinectGrabber
 		      // how many non-0 pixels are in each band. If the number of non-0 pixels breaks the
 		      // threshold in either band, then the average of all non-0 pixels in the matrix is applied
 		      // to the candidate pixel.
-		      for(int yi = -2; yi < 3; yi++)
+		      for(int yi = -3; yi < 4; yi++)
 		      {
-		    	  for(int xi = -2; xi < 3; xi++)
+		    	  for(int xi = -3; xi < 4; xi++)
 		    	  {
 		          // yi and xi are modifiers that will be subtracted from and added to the
 		          // candidate pixel's x and y coordinates that we calculated earlier. From the
@@ -162,14 +158,14 @@ public class KinectGrabber
 		            // might not be the one we want. Be sure to check
 		            // to make sure that the modified coordinates
 		            // match up with our image bounds.
-		            if(xSearch >= 0 && xSearch <= widthBound && ySearch >= 0 && ySearch <= heightBound)
+		            if(xSearch >= 0 && xSearch < 640 && ySearch >= 0 && ySearch < 480)
 		            {
 		              int index = xSearch + (ySearch * 640);
 		              // We only want to look for non-0 values
 		              if(OpenCV2.getUnsignedByte(srcByteBuffer, index) != 255)
 		              {
 		                // We want to find count the frequency of each depth
-		                for(int i = 0; i < 24; i++)
+		                for(int i = 0; i < 49; i++)
 		                {
 		                  if(filterCollection[i][0] == OpenCV2.getUnsignedByte(srcByteBuffer, index))
 		                  {
@@ -191,7 +187,7 @@ public class KinectGrabber
 
 		                // We will then determine which band the non-0 pixel
 		                // was found in, and increment the band counters.
-		                if (yi != 2 && yi != -2 && xi != 2 && xi != -2)
+		                if (yi != 3 && yi != -3 && xi != 3 && xi != -3)
 		                  innerBandCount++;
 		                else
 		                  outerBandCount++;
@@ -235,38 +231,6 @@ public class KinectGrabber
 		return dst;
 	}
 
-	public IplImage save = null;
-
-	public IplImage fillHoleWithHistory(IplImage src)
-	{
-		IplImage tmp = src.clone();
-
-		if(save != null)
-		{
-			ByteBuffer saveByteBuffer = save.getByteBuffer();
-			ByteBuffer srcByteBuffer = src.getByteBuffer();
-
-			for(int x = 0; x < 640; x++)
-			{
-				for(int y = 0; y < 480; y++)
-				{
-					int srcPixelIndex = x + 640*y;
-
-					if(srcByteBuffer.get(srcPixelIndex) == -1) //255
-					{
-						srcByteBuffer.put(x + 640*y, saveByteBuffer.get(srcPixelIndex));
-					}
-				}
-			}
-		}
-
-		save = tmp;
-
-		return src;
-	}
-	
-	private Queue<IplImage> imageQueue = new LinkedList<IplImage>();
-	
 	public void stop()
 	{
 		try

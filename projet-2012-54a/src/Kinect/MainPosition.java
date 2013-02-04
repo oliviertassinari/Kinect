@@ -4,8 +4,8 @@ import com.googlecode.javacv.cpp.opencv_core.CvPoint;
 
 public class MainPosition
 {
-	private long positions[][] = new long[20][5];
-	private long derivees[][] = new long[19][4];
+	private long positions[][] = new long[60][5];
+	private float derivees[][] = new float[59][4];
 
 	public MainPosition()
 	{
@@ -14,7 +14,7 @@ public class MainPosition
 	// this method keeps the different positions of the hand
 	public void add(long time, CvPoint centre, long depth, long state)
 	{
-		for(int i = 19; i > 0; i--)
+		for(int i = 59; i > 0; i--)
 		{
 			positions[i][0] = positions[i-1][0];
 			positions[i][1] = positions[i-1][1];
@@ -34,27 +34,25 @@ public class MainPosition
 	
 	public void computeDerivees()
 	{
-		for(int i = 18; i > 0; i--)
+		for(int i = 58; i > 0; i--)
 		{
-			derivees[i][0] = derivees[i-1][0];
-			derivees[i][1] = derivees[i-1][1];
-			derivees[i][2] = derivees[i-1][2];
-			derivees[i][3] = derivees[i-1][3];
+			derivees[i][0] = derivees[i-1][1];
+			derivees[i][1] = derivees[i-1][2];
+			derivees[i][2] = derivees[i-1][3];
 		}
-		
-		long deltaT = positions[0][0]-positions[1][0];
 
-		derivees[0][0] = positions[0][0];
-		derivees[0][1] = (positions[0][1]-positions[1][1])/deltaT;
-		derivees[0][2] = (positions[0][2]-positions[1][2])/deltaT;
-		derivees[0][3] = (positions[0][3]-positions[1][3])/deltaT;
+		float deltaT = positions[0][0]-positions[1][0];
+
+		derivees[0][0] = (positions[0][1]-positions[1][1])/deltaT;
+		derivees[0][1] = (positions[0][2]-positions[1][2])/deltaT;
+		derivees[0][2] = (positions[0][3]-positions[1][3])/deltaT;
 	}
 
 	
 	// this method adds positions in the list of positions
 	public void add(MainPosition mainPosition)
 	{
-		for(int i = 19; i > 0; i--)
+		for(int i = 59; i > 0; i--)
 		{
 			positions[i][0] = mainPosition.get(i)[0];
 			positions[i][1] = mainPosition.get(i)[1];
@@ -69,8 +67,8 @@ public class MainPosition
 	{
 		return positions[index];
 	}
-	
-	public long[] getDerivee(int index)
+
+	public float[] getDerivee(int index)
 	{
 		return derivees[index];
 	}

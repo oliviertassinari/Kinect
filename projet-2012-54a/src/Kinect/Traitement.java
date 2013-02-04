@@ -25,6 +25,7 @@ import com.googlecode.javacv.cpp.opencv_core.IplImage;
 import com.googlecode.javacv.cpp.opencv_imgproc.CvConvexityDefect;
 
 
+
 public class Traitement implements Runnable
 {
 	private Thread runner;
@@ -36,8 +37,8 @@ public class Traitement implements Runnable
 	private MainPosition mainPositionFiltreRight = new MainPosition();
 	private IplImage imageTraitement;
 	private long timeLastGrab;
-	private OneEuroFilter filtreLeft = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
-	private OneEuroFilter filtreRight = new OneEuroFilter(0.1, 5.0, 0.01, 1.0);
+	private OneEuroFilter filtreLeft = new OneEuroFilter(0.033, 5.0, 0.02, 1.0);
+	private OneEuroFilter filtreRight = new OneEuroFilter(0.033, 5.0, 0.02, 1.0);
 
 	public Traitement()
     {
@@ -195,14 +196,14 @@ public class Traitement implements Runnable
 
 				cvClearMemStorage(storage);
 
-				long timeEnd = 50-(int)(System.currentTimeMillis()-timeLastGrab);
-	
+				long timeEnd = 33-(int)(System.currentTimeMillis()-timeLastGrab);
+
 				if(timeEnd > 0)
 				{
 					Thread.sleep(timeEnd);
 				}
 
-				System.out.println(-timeEnd+50+" ms");
+				System.out.println(-timeEnd+33+" ms");
 		    }
 
 			grabber.stop();
@@ -363,19 +364,20 @@ public class Traitement implements Runnable
 
     private int ct1 = 0;
     private int ct2 = 0;
-    private int ct3 = 0;
     private long timeOrigin = System.currentTimeMillis();
 
     public void reconnaissanceDeMvt()
     {
+    	long[] positionCurrent = mainPositionFiltreLeft.get(0);
+
     	for(int i = 0; i < 19; i++)
     	{
     		long[] position = mainPositionFiltreLeft.get(i);
-    		long[] derivee = mainPositionFiltreLeft.getDerivee(i);
+    		float[] derivee = mainPositionFiltreLeft.getDerivee(i);
 
     		if(position[0] > timeOrigin)
     		{
-	    		if(derivee[1] < 0.1 && derivee[2] < 0.1) //stable en x, y
+    			if(Math.abs(position[1]-positionCurrent[1]) < 40 && Math.abs(position[2]-positionCurrent[2]) < 40) //stable en x, y
 	    		{
 	    			ct1 += 1;
 	    		}
@@ -384,20 +386,46 @@ public class Traitement implements Runnable
 	    			ct1 = 0;
 	    		}
 
-	    		if(ct1 > 8)
+    			if(Math.abs(position[1]-positionCurrent[1]) < 40 && Math.abs(position[3]-positionCurrent[3]) < 40) //stable en x, z
+    			{
+    				ct2 += 1;
+    			}
+	    		else
 	    		{
-	    			int dz = 0;
+	    			ct2 = 0;
+	    		}
+
+	    		if(ct1 > 20)
+	    		{
+	    			float dz = 0;
 	    			
 	    			for(int j = 0; j <= i; j++)
 	    			{
-	    				dz += mainPositionFiltreLeft.getDerivee(j)[3];
+	    				dz += mainPositionFiltreLeft.getDerivee(j)[2];
 	    			}
-	    			
-	    			if(dz > 10)
+
+	    			if(dz > 0.02)
 	    			{
 	    				timeOrigin = timeLastGrab;
 	    				ct1 = 0;
 	    				System.out.println("pause");
+	    			}
+	    		}
+
+	    		if(ct2 > 20)
+	    		{
+	    			float dy = 0;
+
+	    			for(int j = 0; j <= i; j++)
+	    			{
+	    				dy += mainPositionFiltreLeft.getDerivee(j)[1];
+	    			}
+
+	    			if(Math.abs(dy) > 0.4)
+	    			{
+	    				timeOrigin = timeLastGrab;
+	    				ct2 = 0;
+	    				System.out.println("volume "+dy);
 	    			}
 	    		}
     		}
@@ -405,6 +433,15 @@ public class Traitement implements Runnable
     		{
     			break;
     		}
+    	}
+
+    	if(ct1 > 20)
+    	{
+			//System.out.println("stable");
+    	}
+    	else
+    	{
+    		//System.out.println("non stable "+ct1);
     	}
     }
 

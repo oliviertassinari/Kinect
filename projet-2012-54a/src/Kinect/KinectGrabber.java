@@ -26,6 +26,7 @@ public class KinectGrabber
 	private int scaleI = 9;
 	private float scaleA;
 	private float scaleB;
+	private boolean scaleIs = false;
 
 	/**
 	 * Initialise le grabber.
@@ -78,7 +79,7 @@ public class KinectGrabber
 			DepthMap depthM = depthGenerator.getDepthMap();
 		    depthM.copyToBuffer(depthByteBuffer, 640 * 480 * 2);
 
-			return fillHoleWithInterpolation(scale(imageDepth));
+			return scale(imageDepth);
 		}
 		catch(GeneralException e)
 		{
@@ -127,8 +128,24 @@ public class KinectGrabber
 				}
 			}
 
-			scaleA = (c1-c2)/(max-min);
-			scaleB = c1 - scaleA*max;
+			//Filtre passe bas
+			if(scaleIs)
+			{
+				if(max != min)
+				{
+					scaleA = (float)((c1-c2)/(max-min)*0.3 + scaleA*0.7);
+					scaleB = (float)((c1 - scaleA*max)*0.3 + scaleB*0.7);
+				}
+			}
+			else
+			{
+				if(max != min)
+				{
+					scaleA = (c1-c2)/(max-min);
+					scaleB = c1 - scaleA*max;
+					scaleIs = false;
+				}
+			}
 
 			scaleI = 0;
 		}
@@ -148,7 +165,8 @@ public class KinectGrabber
 				int srcPixelIndex = 2*x + 2*640*y;
 				float value = (srcByteBuffer.get(srcPixelIndex+1) & 0xff)*256 + (srcByteBuffer.get(srcPixelIndex) & 0xff);
 
-				value = (float)((scaleA*value+scaleB)/256.0);
+				value = (float)(scaleA*value+scaleB);
+				value = (float)(value/256.0);
 
 				if(value <= 2)
 				{

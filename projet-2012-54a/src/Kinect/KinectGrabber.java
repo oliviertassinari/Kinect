@@ -25,7 +25,10 @@ public class KinectGrabber
 {
 	private Context context;
 	private DepthGenerator depthGenerator;
-
+	private int scaleI = 9;
+	private float scaleA;
+	private float scaleB;
+	
 	public KinectGrabber()
 	{
 		try
@@ -78,23 +81,68 @@ public class KinectGrabber
 
 	public IplImage scale(IplImage src)
 	{
-		cvNormalize(src, src, -8000, 65535, CV_MINMAX, null);
+		ByteBuffer srcByteBuffer = src.getByteBuffer();
 
 		IplImage dst = IplImage.create(640, 480, IPL_DEPTH_8U, 1);
-		cvConvertScale(src, dst, 1/256.0, 0);
-
 		ByteBuffer dstByteBuffer = dst.getByteBuffer();
 
+		int c1 = 65535;
+		int c2 = -8000;
+
+		//Calcule de max et min
+		if(scaleI > 10)
+		{
+			int max = 0;
+			int min = 65535;
+
+			for(int x = 0; x < 640; x++)
+			{
+				for(int y = 0; y < 480; y++)
+				{
+					int srcPixelIndex = 2*x + 2*640*y;
+	
+					int value = (srcByteBuffer.get(srcPixelIndex+1) & 0xff)*256 + (srcByteBuffer.get(srcPixelIndex) & 0xff);
+	
+					if(value < min)
+					{
+						min = value;
+					}
+					else if(value > max)
+					{
+						max = value;
+					}
+				}
+			}
+
+			scaleA = (c1-c2)/(max-min);
+			scaleB = c1 - scaleA*max;
+
+			scaleI = 0;
+		}
+		else
+		{
+			scaleI++;
+		}
+
+		// Renormalisation
+		// equivalent de cvNormalize(src, dst, -8000, 65535, CV_MINMAX, null);
+		// et convertion en 8Bit
+		// equivalent de cvConvertScale(src, dst, 1/256.0, 0);
 		for(int x = 0; x < 640; x++)
 		{
 			for(int y = 0; y < 480; y++)
 			{
-				int srcPixelIndex = x + 640*y;
+				int srcPixelIndex = 2*x + 2*640*y;
+				float value = (srcByteBuffer.get(srcPixelIndex+1) & 0xff)*256 + (srcByteBuffer.get(srcPixelIndex) & 0xff);
 
-				if(dstByteBuffer.get(srcPixelIndex) == 0)
+				value = (float)((scaleA*value+scaleB)/256.0);
+
+				if(value <= 2)
 				{
-					dstByteBuffer.put(x + 640*y, (byte)255);
+					value = 255; // White
 				}
+
+				dstByteBuffer.put(srcPixelIndex/2, (byte)(value));
 			}
 		}
 
@@ -119,7 +167,7 @@ public class KinectGrabber
 
 			    if(srcByteBuffer.get(depthIndex) == -1) // White
 			    {
-			    	int[][] filterCollection = new int[49][2];
+			    	int[][] filterCollection = new int[24][2];
 	
 			    	int innerBandCount = 0;
 			    	int outerBandCount = 0;

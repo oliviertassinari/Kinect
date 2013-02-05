@@ -115,7 +115,7 @@ public class Traitement implements Runnable
 	        	int isFind = 1;
 	        	ArrayList<CvPoint> centerList = new ArrayList<CvPoint>();
 
-	        	while(isFind != 0 && isFind < 3) //2 iterations max
+	        	while(isFind != 0 && isFind < 4) //5 iterations max
 	        	{
 	        		isFind++;
 
@@ -175,7 +175,7 @@ public class Traitement implements Runnable
 		                contour = contour.h_next();
 		            }
 	        	}
-
+	        	
 	        	getPositionHand(centerList);
 	        	getPositionFiltreHand();
 	        	reconnaissanceDeMvt();

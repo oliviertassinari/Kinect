@@ -35,7 +35,7 @@ public class Traitement implements Runnable
 	private long timeLastGrab;
 	private OneEuroFilter filtreLeft = new OneEuroFilter(0.033, 5.0, 0.02, 1.0);
 	private OneEuroFilter filtreRight = new OneEuroFilter(0.033, 5.0, 0.02, 1.0);
-	private long[] timeList = new long[3];
+	private long[] timeList = new long[4];
 
 	public Traitement()
     {
@@ -188,8 +188,8 @@ public class Traitement implements Runnable
 					cvPutText(imageDislay2, "Droite", cvPoint((int)mainPositionRight.get(0)[1]-20, (int)mainPositionRight.get(0)[2]-10), font, CvScalar.RED);
 				}
 
-	        	CvFont fontFPS = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.5, 1); 
-				cvPutText(imageDislay2, "FPS : "+Integer.toString(getFPS()), cvPoint(10, 430), fontFPS, CvScalar.BLACK);
+	        	CvFont fontFPS = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.6, 1); 
+				cvPutText(imageDislay2, "FPS : "+Integer.toString(getFPS()), cvPoint(10, 460), fontFPS, CvScalar.BLACK);
 
 				//IplImage resizeDisplay = IplImage.create(width/2, height/2, IPL_DEPTH_8U, 3);
 				//cvResize(imageDislay2, resizeDisplay);
@@ -449,14 +449,14 @@ public class Traitement implements Runnable
   
     public int getFPS()
     {
-    	for(int i = timeList.length-1; i > 0; i--)
+    	for(int i = 3; i > 0; i--)
     	{
     		timeList[i] = timeList[i-1];
     	}
 
     	timeList[0] = System.currentTimeMillis();
 
-    	return (int)(2000/(float)((timeList[0] - timeList[2])));
+    	return (int)(3000/(float)((timeList[0] - timeList[3])));
     }
 
     public CvPoint getContourCenter(CvSeq contour, CvMemStorage storage)

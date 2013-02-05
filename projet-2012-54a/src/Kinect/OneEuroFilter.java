@@ -5,34 +5,30 @@ package Kinect;
  */
 public class OneEuroFilter
 {
-    private double sampleRate;
+    private double freq;
     private double minFreqCut;
     private double beta;
     private double dFreqCut;
+    private double lastTime;
     private LowPassFilter x;
     private LowPassFilter dx;
-    private LowPassFilter y;
-    private LowPassFilter dy;
 
     /**
      * Initialise le filtre.
-     * @param sampleRate temps entre deux données
+     * @param freq fréquence d'acquisition des données
      * @param minFreqCut fréquence de coupure minimale
      * @param beta facteur de contribution de la dérivée
      * @param dFreqCut fréquence de coupure minimale de la dérivée
      */
-    public OneEuroFilter(double sampleRate, double minFreqCut, double beta, double dFreqCut)
+    public OneEuroFilter(double freq, double minFreqCut, double beta, double dFreqCut)
     {
-        this.sampleRate = sampleRate;
+        this.freq = freq;
         this.minFreqCut = minFreqCut;
         this.beta = beta;
         this.dFreqCut = dFreqCut;
 
         x = new LowPassFilter();
         dx = new LowPassFilter();
-
-        y = new LowPassFilter();
-        dy = new LowPassFilter();
     }
 
     /**
@@ -42,7 +38,8 @@ public class OneEuroFilter
      */
     public double getAlpha(double freqCut)
     {
-        double tau = 1/(2*Math.PI*freqCut);
+        double sampleRate = 1.0 / freq;
+    	double tau = 1/(2*Math.PI*freqCut);
         return 1/(1 + tau/sampleRate);
     }
 
@@ -53,23 +50,18 @@ public class OneEuroFilter
      * @param dv
      * @return valeur filtrée
      */
-    public double filter(double value, LowPassFilter v, LowPassFilter dv)
+    public double filter(double value)
     {
-        double dvalue = v.isInitialized() ? (value - v.lastRawValue()) / sampleRate : 0.0;
-        double edvalue = dv.filter(dvalue, getAlpha(dFreqCut));
+        if(lastTime != 0)
+        {
+        	freq = 1000 / (System.currentTimeMillis() - lastTime);
+        }
 
-        return v.filter(value, getAlpha(minFreqCut + beta * Math.abs(edvalue)));
-    }
+        lastTime = System.currentTimeMillis();
 
-    /**
-     * Retourne les valeurs filtrée.
-     * @param value1 premiere valeur a filtrer
-     * @param value2 deuxième valeur a filtrer
-     * @return valeurs filtrées
-     */
-    public double[] filter(double value1, double value2)
-    {
-    	double[] result = { filter(value1, x, dx), filter(value2, y, dy) };
-    	return result;
+    	double dvalue = x.isInitialized() ? (value - x.lastRawValue()) * freq : 0.0;
+        double edvalue = dx.filter(dvalue, getAlpha(dFreqCut));
+
+        return x.filter(value, getAlpha(minFreqCut + beta * Math.abs(edvalue)));
     }
 }

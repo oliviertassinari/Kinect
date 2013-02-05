@@ -4,11 +4,7 @@ import static com.googlecode.javacv.cpp.opencv_core.CV_SEQ_CONTOUR;
 import static com.googlecode.javacv.cpp.opencv_core.cvCreateSeq;
 import static com.googlecode.javacv.cpp.opencv_core.cvGetSeqElem;
 import static com.googlecode.javacv.cpp.opencv_core.cvSeqPush;
-import static com.googlecode.javacv.cpp.opencv_imgproc.CV_CHAIN_APPROX_SIMPLE;
-import static com.googlecode.javacv.cpp.opencv_imgproc.CV_GAUSSIAN;
-import static com.googlecode.javacv.cpp.opencv_imgproc.CV_RETR_LIST;
-import static com.googlecode.javacv.cpp.opencv_imgproc.CV_RGB2GRAY;
-import static com.googlecode.javacv.cpp.opencv_imgproc.CV_THRESH_BINARY;
+import static com.googlecode.javacv.cpp.opencv_imgproc.*;
 
 import java.nio.ByteBuffer;
 
@@ -108,6 +104,32 @@ public class OpenCV2
     				else
     				{
         				dstBuffer.put(pixelIndex, (byte) 0);
+    				}
+    			}
+    		}
+    	}
+    	else if(thresholdType == CV_THRESH_TOZERO)
+    	{
+    		int width = src.width();
+    		int height = src.height();
+    		int pixelIndex;
+
+    		ByteBuffer srcBuffer = src.getByteBuffer();
+    		ByteBuffer dstBuffer = dst.getByteBuffer();
+
+    		for(int x = 0; x < width; x++)
+    		{
+    			for(int y = 0; y < height; y++)
+    			{
+    				pixelIndex = x + width*y;
+
+    				if(getUnsignedByte(srcBuffer, pixelIndex) > threshold)
+    				{
+    					dstBuffer.put(pixelIndex, (byte) getUnsignedByte(srcBuffer, pixelIndex));
+    				}
+    				else
+    				{
+        				dstBuffer.put(pixelIndex, (byte) 255);
     				}
     			}
     		}

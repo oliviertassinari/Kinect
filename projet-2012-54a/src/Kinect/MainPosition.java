@@ -7,11 +7,15 @@ import com.googlecode.javacv.cpp.opencv_core.CvPoint;
  */
 public class MainPosition
 {
-	private long positions[][] = new long[60][5];
-	private float derivees[][] = new float[59][4];
+	private long[][] positions;
+	private long[][] positionsFiltre;
+	private float[][] derivees;
+	private OneEuroFilter oneEuroFilterX;
+	private OneEuroFilter oneEuroFilterY;
 
 	public MainPosition()
 	{
+		reset();
 	}
 
 	/**
@@ -23,7 +27,7 @@ public class MainPosition
 	 */
 	public void add(long time, CvPoint centre, long depth, long state)
 	{
-		for(int i = 59; i > 0; i--)
+		for(int i = positions.length-1; i > 0; i--)
 		{
 			positions[i][0] = positions[i-1][0];
 			positions[i][1] = positions[i-1][1];
@@ -37,43 +41,58 @@ public class MainPosition
 		positions[0][2] = centre.y();
 		positions[0][3] = depth;
 		positions[0][4] = state;
-		
+
+
+		for(int i = positionsFiltre.length-1; i > 0; i--)
+		{
+			positionsFiltre[i][0] = positionsFiltre[i-1][0];
+			positionsFiltre[i][1] = positionsFiltre[i-1][1];
+			positionsFiltre[i][2] = positionsFiltre[i-1][2];
+		}
+
+		positionsFiltre[0][0] = (int)oneEuroFilterX.filter(centre.x());
+		positionsFiltre[0][1] = (int)oneEuroFilterY.filter(centre.y());
+		positionsFiltre[0][2] = depth;
+
+
+		// Calcule de dérivée
+		for(int i = derivees.length-1; i > 0; i--)
+		{
+			derivees[i][0] = derivees[i-1][0];
+			derivees[i][1] = derivees[i-1][1];
+			derivees[i][2] = derivees[i-1][2];
+		}
+
+		if(positions[1][0] == 0)
+		{
+			derivees[0][0] = 0;
+			derivees[0][1] = 0;
+			derivees[0][2] = 0;
+		}
+		else
+		{
+			float deltaT = positions[0][0]-positions[1][0];
+
+			derivees[0][0] = (positionsFiltre[0][0]-positionsFiltre[1][0])/deltaT;
+			derivees[0][1] = (positionsFiltre[0][1]-positionsFiltre[1][1])/deltaT;
+			derivees[0][2] = (positionsFiltre[0][2]-positionsFiltre[1][2])/deltaT;
+		}
 
 	}
 
 	/**
-	 * Calcule la dérivée de la 1er case du tableau.
+	 * Réinitialise les données
 	 */
-	public void computeDerivees()
+	public void reset()
 	{
-		for(int i = 58; i > 0; i--)
-		{
-			derivees[i][0] = derivees[i-1][1];
-			derivees[i][1] = derivees[i-1][2];
-			derivees[i][2] = derivees[i-1][3];
-		}
+		positions = new long[60][5];
+		positionsFiltre = new long[60][3];
+		derivees = new float[59][3];
 
-		float deltaT = positions[0][0]-positions[1][0];
+		oneEuroFilterX = new OneEuroFilter(30, 1.0, 0.04, 1.0);
+		oneEuroFilterY = new OneEuroFilter(30, 1.0, 0.04, 1.0);
 
-		derivees[0][0] = (positions[0][1]-positions[1][1])/deltaT;
-		derivees[0][1] = (positions[0][2]-positions[1][2])/deltaT;
-		derivees[0][2] = (positions[0][3]-positions[1][3])/deltaT;
-	}
-
-	
-	/**
-	 * Transfer de position.
-	 * @param mainPosition source des données
-	 */
-	public void add(MainPosition mainPosition)
-	{
-		for(int i = 59; i > 0; i--)
-		{
-			positions[i][0] = mainPosition.get(i)[0];
-			positions[i][1] = mainPosition.get(i)[1];
-			positions[i][2] = mainPosition.get(i)[2];
-			positions[i][3] = mainPosition.get(i)[3];
-		}
+		System.out.print("reset ");
 	}
 
 	/**
@@ -84,6 +103,16 @@ public class MainPosition
 	public long[] get(int index)
 	{
 		return positions[index];
+	}
+
+	/**
+	 * Retourne une position filtré.
+	 * @param index index
+	 * @return position filtré demandée
+	 */
+	public long[] getFiltre(int index)
+	{
+		return positionsFiltre[index];
 	}
 
 	/**

@@ -20,6 +20,9 @@ import com.googlecode.javacv.cpp.opencv_core.CvSeq;
 import com.googlecode.javacv.cpp.opencv_core.CvSlice;
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 
+/**
+ * Implémentation des fonctions d'OpenCV en java.
+ */
 public class OpenCV2
 {
     public static void cv2CvtColor(IplImage src, IplImage dst, int code)

@@ -3,7 +3,7 @@ package Kinect;
 import com.googlecode.javacv.cpp.opencv_core.CvPoint;
 
 /**
- * Structure de donnee pour enregistrer la position des mains
+ * Structure de donnée pour enregistrer la position des mains.
  */
 public class MainPosition
 {
@@ -14,7 +14,13 @@ public class MainPosition
 	{
 	}
 
-	// this method keeps the different positions of the hand
+	/**
+	 * Ajouter une nouvelle position.
+	 * @param time temps en milliseconde depuis 1970
+	 * @param centre coordonnées x y
+	 * @param depth coordonnée z
+	 * @param state état de la main
+	 */
 	public void add(long time, CvPoint centre, long depth, long state)
 	{
 		for(int i = 59; i > 0; i--)
@@ -34,7 +40,10 @@ public class MainPosition
 		
 
 	}
-	
+
+	/**
+	 * Calcule la dérivée de la 1er case du tableau.
+	 */
 	public void computeDerivees()
 	{
 		for(int i = 58; i > 0; i--)
@@ -52,7 +61,10 @@ public class MainPosition
 	}
 
 	
-	// this method adds positions in the list of positions
+	/**
+	 * Transfer de position.
+	 * @param mainPosition source des données
+	 */
 	public void add(MainPosition mainPosition)
 	{
 		for(int i = 59; i > 0; i--)
@@ -64,13 +76,21 @@ public class MainPosition
 		}
 	}
 
-
-	// this method returns the index of a position
+	/**
+	 * Retourne une position.
+	 * @param index index
+	 * @return position demandée
+	 */
 	public long[] get(int index)
 	{
 		return positions[index];
 	}
 
+	/**
+	 * Retourne une dérivée.
+	 * @param index index
+	 * @return dérivée demandée
+	 */
 	public float[] getDerivee(int index)
 	{
 		return derivees[index];

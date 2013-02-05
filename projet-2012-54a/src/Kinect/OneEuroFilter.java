@@ -15,11 +15,11 @@ public class OneEuroFilter
     private LowPassFilter dy;
 
     /**
-     * Initialise le filtre
-     * @param sampleRate temps entre deux donnees
-     * @param minFreqCut frequence de coupure minimale
-     * @param beta facteur de contribution de la derivee
-     * @param dFreqCut frequence de coupure minimale de la derivee
+     * Initialise le filtre.
+     * @param sampleRate temps entre deux données
+     * @param minFreqCut fréquence de coupure minimale
+     * @param beta facteur de contribution de la dérivée
+     * @param dFreqCut fréquence de coupure minimale de la dérivée
      */
     public OneEuroFilter(double sampleRate, double minFreqCut, double beta, double dFreqCut)
     {
@@ -36,8 +36,8 @@ public class OneEuroFilter
     }
 
     /**
-     * Retourne la valeur alpha pour le filtre passe bas
-     * @param freqCut frequence de coupure desiree
+     * Retourne la valeur alpha pour le filtre passe bas.
+     * @param freqCut fréquence de coupure désirée
      * @return la valeur alpha pour le filtre passe bas
      */
     public double getAlpha(double freqCut)
@@ -47,11 +47,11 @@ public class OneEuroFilter
     }
 
     /**
-     * Retourne la valeur filtree
+     * Retourne la valeur filtrée.
      * @param value valeur a filtrer
      * @param v
      * @param dv
-     * @return valeur filtree
+     * @return valeur filtrée
      */
     public double filter(double value, LowPassFilter v, LowPassFilter dv)
     {
@@ -61,12 +61,11 @@ public class OneEuroFilter
         return v.filter(value, getAlpha(minFreqCut + beta * Math.abs(edvalue)));
     }
 
-    
     /**
-     * Retourne les valeurs filtree
+     * Retourne les valeurs filtrée.
      * @param value1 premiere valeur a filtrer
-     * @param value2 deuxieme valeur a filtrer
-     * @return valeurs filtrees
+     * @param value2 deuxième valeur a filtrer
+     * @return valeurs filtrées
      */
     public double[] filter(double value1, double value2)
     {

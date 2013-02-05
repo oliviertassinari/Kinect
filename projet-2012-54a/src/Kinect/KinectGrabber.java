@@ -168,9 +168,13 @@ public class KinectGrabber
 				value = (float)(scaleA*value+scaleB);
 				value = (float)(value/256.0);
 
-				if(value <= 2)
+				if(value <= 0)
 				{
 					value = 255; // White
+				}
+				else if(value > 255)
+				{
+					value = 255;
 				}
 
 				dstByteBuffer.put(srcPixelIndex/2, (byte)(value));

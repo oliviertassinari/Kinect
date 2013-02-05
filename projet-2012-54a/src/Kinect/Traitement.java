@@ -5,17 +5,11 @@ import static com.googlecode.javacv.cpp.opencv_imgproc.*;
 
 import java.awt.GridLayout;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import javax.swing.JFrame;
 
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.CanvasFrame;
-import com.googlecode.javacv.FrameGrabber.Exception;
-import com.googlecode.javacv.OpenCVFrameGrabber;
-import com.googlecode.javacv.OpenKinectFrameGrabber;
-import com.googlecode.javacv.VideoInputFrameGrabber;
 import com.googlecode.javacv.cpp.opencv_core.CvBox2D;
 import com.googlecode.javacv.cpp.opencv_core.CvContour;
 import com.googlecode.javacv.cpp.opencv_core.CvFont;
@@ -197,7 +191,7 @@ public class Traitement implements Runnable
 	        	CvFont fontFPS = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.5, 1); 
 				cvPutText(imageDislay2, "FPS : "+Integer.toString(getFPS()), cvPoint(10, 430), fontFPS, CvScalar.BLACK);
 
-				IplImage resizeDisplay = IplImage.create(width/2, height/2, IPL_DEPTH_8U, 3);
+				//IplImage resizeDisplay = IplImage.create(width/2, height/2, IPL_DEPTH_8U, 3);
 				//cvResize(imageDislay2, resizeDisplay);
 
 				fenetreFrame1.showImage(imageThreshold);
@@ -382,7 +376,6 @@ public class Traitement implements Runnable
     	for(int i = 0; i < 19; i++)
     	{
     		long[] position = mainPositionFiltreLeft.get(i);
-    		float[] derivee = mainPositionFiltreLeft.getDerivee(i);
 
     		if(position[0] > timeOrigin)
     		{

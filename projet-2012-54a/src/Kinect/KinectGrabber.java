@@ -1,14 +1,9 @@
 package Kinect;
 
-import static com.googlecode.javacv.cpp.opencv_core.CV_MINMAX;
 import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_16U;
 import static com.googlecode.javacv.cpp.opencv_core.IPL_DEPTH_8U;
-import static com.googlecode.javacv.cpp.opencv_core.cvConvertScale;
-import static com.googlecode.javacv.cpp.opencv_core.cvNormalize;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import org.OpenNI.Context;
 import org.OpenNI.DepthGenerator;
@@ -20,7 +15,10 @@ import org.OpenNI.StatusException;
 
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 
-
+/**
+ * Wrapper entre OpenNI et JavaCV.
+ * Il permet de recuperer l image de profondeur de la kinect
+*/
 public class KinectGrabber
 {
 	private Context context;
@@ -28,7 +26,10 @@ public class KinectGrabber
 	private int scaleI = 9;
 	private float scaleA;
 	private float scaleB;
-	
+
+	/**
+	 * Initialise le grabber
+	 */
 	public KinectGrabber()
 	{
 		try
@@ -46,6 +47,9 @@ public class KinectGrabber
 		}
 	}
 
+	/**
+	 * Demarre le grabber
+	 */
 	public void start()
 	{
 		try
@@ -58,6 +62,10 @@ public class KinectGrabber
 		} 
 	}
 
+	/**
+	 * Recupere la derniere image fourni par la kinect
+	 * @return une image
+	 */
 	public IplImage grab()
 	{
 		try
@@ -79,6 +87,11 @@ public class KinectGrabber
 		}
 	}
 
+	/**
+	 * Augmente le contraste de l image 16bit fournie par la kinect et la convertie en 8bit
+	 * @param src image source
+	 * @return image traitee
+	 */
 	public IplImage scale(IplImage src)
 	{
 		ByteBuffer srcByteBuffer = src.getByteBuffer();
@@ -149,6 +162,11 @@ public class KinectGrabber
 		return dst;
 	}
 
+	/**
+	 * Remplie les pixels blancs de l image par interpolation
+	 * @param src image source
+	 * @return image traitee
+	 */
 	public IplImage fillHoleWithInterpolation(IplImage src)
 	{
 		IplImage dst = src.clone();
@@ -254,6 +272,9 @@ public class KinectGrabber
 		return dst;
 	}
 
+	/**
+	 * Arrete le grabber
+	 */
 	public void stop()
 	{
 		try

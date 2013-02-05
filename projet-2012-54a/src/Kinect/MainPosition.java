@@ -2,6 +2,9 @@ package Kinect;
 
 import com.googlecode.javacv.cpp.opencv_core.CvPoint;
 
+/**
+ * Structure de donnee pour enregistrer la position des mains
+ */
 public class MainPosition
 {
 	private long positions[][] = new long[60][5];

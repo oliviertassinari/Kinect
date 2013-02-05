@@ -1,7 +1,8 @@
 package Kinect;
 
-
-// this class is used to implement the one euro filter
+/**
+ * Implementation du filtre d'un euro.
+ */
 public class OneEuroFilter
 {
     private double sampleRate;
@@ -13,8 +14,13 @@ public class OneEuroFilter
     private LowPassFilter y;
     private LowPassFilter dy;
 
-    
-    // this method creats low pass filter for x and y
+    /**
+     * Initialise le filtre
+     * @param sampleRate temps entre deux donnees
+     * @param minFreqCut frequence de coupure minimale
+     * @param beta facteur de contribution de la derivee
+     * @param dFreqCut frequence de coupure minimale de la derivee
+     */
     public OneEuroFilter(double sampleRate, double minFreqCut, double beta, double dFreqCut)
     {
         this.sampleRate = sampleRate;
@@ -22,24 +28,31 @@ public class OneEuroFilter
         this.beta = beta;
         this.dFreqCut = dFreqCut;
 
-        x = new LowPassFilter(getAlpha(minFreqCut));
-        dx = new LowPassFilter(getAlpha(dFreqCut));
+        x = new LowPassFilter();
+        dx = new LowPassFilter();
 
-        y = new LowPassFilter(getAlpha(minFreqCut));
-        dy = new LowPassFilter(getAlpha(dFreqCut));
+        y = new LowPassFilter();
+        dy = new LowPassFilter();
     }
-    
-    
 
-    // this method returns the value of alpha
+    /**
+     * Retourne la valeur alpha pour le filtre passe bas
+     * @param freqCut frequence de coupure desiree
+     * @return la valeur alpha pour le filtre passe bas
+     */
     public double getAlpha(double freqCut)
     {
         double tau = 1/(2*Math.PI*freqCut);
         return 1/(1 + tau/sampleRate);
     }
 
-    
-    // this method returns x or y filtered
+    /**
+     * Retourne la valeur filtree
+     * @param value valeur a filtrer
+     * @param v
+     * @param dv
+     * @return valeur filtree
+     */
     public double filter(double value, LowPassFilter v, LowPassFilter dv)
     {
         double dvalue = v.isInitialized() ? (value - v.lastRawValue()) / sampleRate : 0.0;
@@ -49,7 +62,12 @@ public class OneEuroFilter
     }
 
     
-    // this method returns the coordinates filtered
+    /**
+     * Retourne les valeurs filtree
+     * @param value1 premiere valeur a filtrer
+     * @param value2 deuxieme valeur a filtrer
+     * @return valeurs filtrees
+     */
     public double[] filter(double value1, double value2)
     {
     	double[] result = { filter(value1, x, dx), filter(value2, y, dy) };

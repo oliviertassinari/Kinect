@@ -1,26 +1,32 @@
 package Kinect;
 
+/**
+ * Implementation du filtre passe bas
+ */
 class LowPassFilter
-{   // this class is used to implement the low pass filter
-	
+{
 	private double x, X;
 	private boolean initialized = false;
 
-	
-	// this constructor initializes the variable double alpha which is a smoothing factor ]0,1]
-	public LowPassFilter(double alpha)
+	/**
+	 * Initialise le filtre
+	 */
+	public LowPassFilter()
 	{
 	    x = X = 0;
 	}
 
-	
-	// this constructor implements the filter using the equation
-	public double filter(double value, double alpha) // value is the raw, X is the filtered data
+	/**
+	 * Calcule la nouvelle valeur filtre
+	 * @param value la valeur a filtrer
+	 * @param alpha le facteur du filtre entre 0 et 1
+	 * @return la valeur filtre
+	 */
+	public double filter(double value, double alpha)
 	{
 	    if(initialized)
 	    {
-	        X = alpha * value + (1 - alpha) * X; /* alpha*value is the contribution of the new input data
-	        										(1-alpha)*X adds inertia frome the previous value */
+	        X = alpha * value + (1 - alpha) * X;
 	    }
 	    else
 	    {
@@ -30,16 +36,22 @@ class LowPassFilter
 
 	    x = value;
 
-	    return X; // this is the new filtered data
+	    return X;
  	}
 
-	
-
+	/**
+	 * Teste si le filtre a deja calculer une valeur
+	 * @return true si le filtre a deja calculer une valeur
+	 */
 	public boolean isInitialized()
 	{
 	    return initialized;
 	}
 
+	/**
+	 * Retourne la dernieur valeur donne en entre
+	 * @return la dernier valeur donne en entre
+	 */
 	public double lastRawValue()
 	{
 	    return x;

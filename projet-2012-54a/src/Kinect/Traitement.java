@@ -303,10 +303,10 @@ public class Traitement implements Runnable
 					lengthListToLeft[i] = getLenght(centreLeft[1], centreLeft[2], centerList.get(i).x(), centerList.get(i).y());
 					lengthListToRight[i] = getLenght(centreRight[1], centreRight[2], centerList.get(i).x(), centerList.get(i).y());
 				}
-	
+
 				int[] minLengthListToLeft = getMinList(lengthListToLeft);
 				int[] minLengthListToRight = getMinList(lengthListToRight);
-	
+
 				if(minLengthListToLeft[1] < minLengthListToRight[1])
 				{
 					choose = 1;
@@ -319,7 +319,7 @@ public class Traitement implements Runnable
 					mainPositionRight.add(timeLastGrab, centerList.get(minLengthListToRight[0]), getDepth(centerList.get(minLengthListToRight[0])), 0);
 					centerList.remove(minLengthListToRight[0]);
 				}
-	
+
 				if(centerList.size() == 1)
 				{
 					if(choose == 1)
@@ -359,7 +359,7 @@ public class Traitement implements Runnable
 
 		mainPosition.add(timeLastGrab, centerList.get(minLengthList[0]), getDepth(centerList.get(minLengthList[0])), 0);
     }
- 
+
     private int ct1 = 0;
     private int ct2 = 0;
     private long timeOrigin = System.currentTimeMillis();
@@ -372,7 +372,7 @@ public class Traitement implements Runnable
     	{
     		long[] position = mainPositionLeft.getFiltre(i);
 
-    		if(position[0] > timeOrigin)
+    		if(mainPositionLeft.get(i)[0] > timeOrigin)
     		{
     			if(Math.abs(position[0]-positionCurrent[0]) < 40 && Math.abs(position[1]-positionCurrent[1]) < 40) //stable en x, y
 	    		{
@@ -395,17 +395,18 @@ public class Traitement implements Runnable
 	    		if(ct1 > 20)
 	    		{
 	    			float dz = 0;
-	    			
+
 	    			for(int j = 0; j <= i; j++)
 	    			{
-	    				dz += mainPositionLeft.getDerivee(j)[2];
+	    				dz += mainPositionLeft.getDerivee(j)[2]; //z
 	    			}
 
-	    			if(dz > 0.02)
+	    			if(dz < -0.25 && position[2] - positionCurrent[2] > 4)
 	    			{
 	    				timeOrigin = timeLastGrab;
 	    				ct1 = 0;
-	    				System.out.println("pause");
+	    				ct2 = 0;
+	    				System.out.println("pause "+dz+" "+ (position[2] - positionCurrent[2]));
 	    			}
 	    		}
 
@@ -418,9 +419,10 @@ public class Traitement implements Runnable
 	    				dy += mainPositionLeft.getDerivee(j)[1];
 	    			}
 
-	    			if(Math.abs(dy) > 0.4)
+	    			if(Math.abs(dy) > 3)
 	    			{
 	    				timeOrigin = timeLastGrab;
+	    				ct1 = 0;
 	    				ct2 = 0;
 	    				System.out.println("volume "+dy);
 	    			}

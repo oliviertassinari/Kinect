@@ -123,7 +123,7 @@ public class OpenCV2
     			{
     				pixelIndex = x + width*y;
 
-    				if(getUnsignedByte(srcBuffer, pixelIndex) > threshold)
+    				if(getUnsignedByte(srcBuffer, pixelIndex) >= threshold)
     				{
     					dstBuffer.put(pixelIndex, (byte) getUnsignedByte(srcBuffer, pixelIndex));
     				}

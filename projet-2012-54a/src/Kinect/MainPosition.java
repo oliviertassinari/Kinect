@@ -92,7 +92,7 @@ public class MainPosition
 		oneEuroFilterX = new OneEuroFilter(30, 1.0, 0.04, 1.0);
 		oneEuroFilterY = new OneEuroFilter(30, 1.0, 0.04, 1.0);
 
-		System.out.print("reset ");
+		//System.out.println("reset");
 	}
 
 	/**

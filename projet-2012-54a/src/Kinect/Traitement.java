@@ -100,19 +100,22 @@ public class Traitement implements Runnable
 
 	        	IplImage imageThreshold = imageTraitement.clone();
 
-	        	int isFind = 1;
+	        	int nbrIteration = 0;
+	        	int firstFound = 0;
+	        	boolean isFound = false;
 	        	ArrayList<CvPoint> centerList = new ArrayList<CvPoint>();
 
-	        	while(isFind != 0 && isFind < 6) //5 iterations max
+	        	while(!isFound && nbrIteration < 6) //5 iterations max
 	        	{
-	        		isFind++;
+	        		nbrIteration++;
 
-		        	int int1 = 0;
+	        		int nbrFound = 0;
 
-		        	cvThreshold(imageTraitement, imageThreshold, minVal[0] + 4*isFind, 255, CV_THRESH_BINARY);
+		        	cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*nbrIteration, 255, CV_THRESH_BINARY);
+		        	OpenCV2.cv2LUT(imageThreshold, imageThreshold);
 
 		        	CvSeq contour = new CvSeq();
-		         	cvFindContours(imageThreshold.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+		         	cvFindContours(imageThreshold.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
 		            while(contour != null && !contour.isNull())
 		            {
@@ -120,13 +123,17 @@ public class Traitement implements Runnable
 		                {
 		            		double aire = cvContourArea(contour, CV_WHOLE_SEQ, 0);
 
-		                	if(aire > 1000 && aire < 24000)
+		                	if(aire > 1000 && aire < 10000)
 		                	{
-		                		int1 += 1;
+		                		nbrFound += 1;
 		                		
-		                		if(int1 >= 2)
+		                		if(nbrFound == 1 && firstFound == 0)
 		                		{
-		                			isFind = 0; //true
+		                			firstFound = nbrIteration;
+		                		}
+		                		if(nbrFound == 2)
+		                		{
+		                			isFound = true;
 		                		}
 		                 	}
 		                }
@@ -134,8 +141,19 @@ public class Traitement implements Runnable
 		            }
 	        	}
 
+	        	if(isFound)
+	        	{
+	        		cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*nbrIteration, 255, CV_THRESH_BINARY);
+	        		OpenCV2.cv2LUT(imageThreshold, imageThreshold);
+	        	}
+	        	else
+	        	{
+	        		cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*firstFound, 255, CV_THRESH_BINARY);
+	        		OpenCV2.cv2LUT(imageThreshold, imageThreshold);
+	        	}
+
 	        	CvSeq contour = new CvSeq();
-	         	cvFindContours(imageThreshold.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+	         	cvFindContours(imageThreshold.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
 	            while(contour != null && !contour.isNull())
 	            {
@@ -143,14 +161,14 @@ public class Traitement implements Runnable
 	                {
 	            		double aire = cvContourArea(contour, CV_WHOLE_SEQ, 0);
 
-	                	if(aire > 1000 && aire < 24000)
+	                	if(aire > 1000 && aire < 10000)
 	                	{
 	                		//cvDrawContours(imageDislay2, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
 
 	                	    CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.002, 0);
 	                		cvDrawContours(imageDislay2, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
 
-	                		CvPoint centre = getContourCenter(points, storage);
+	                		CvPoint centre = getContourCenter3(points, storage);
 	                		cvCircle(imageDislay2, centre, 3, CvScalar.RED, -1, 8, 0);
 
 	                		CvSeq convex = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 1);
@@ -436,6 +454,7 @@ public class Traitement implements Runnable
     	return (int)(3000/(float)((timeList[0] - timeList[3])));
     }
 
+    // Rectangle englobant
     public CvPoint getContourCenter(CvSeq contour, CvMemStorage storage)
     {
     	CvBox2D box = cvMinAreaRect2(contour, storage);
@@ -443,6 +462,7 @@ public class Traitement implements Runnable
     	return new CvPoint((int)box.center().x(), (int)box.center().y());
     }
     
+    // Barycentre
     public CvPoint getContourCenter2(CvSeq contour, CvMemStorage storage)
     {
     	CvPoint centre = new CvPoint();
@@ -459,6 +479,16 @@ public class Traitement implements Runnable
     	centre.y(centre.y()/contour.total());
 
     	return centre;
+    }
+    
+    // Moment
+    public CvPoint getContourCenter3(CvSeq contour, CvMemStorage storage)
+    {
+    	CvMoments moments = new CvMoments();
+    	
+    	cvMoments(contour, moments, 0);
+
+    	return new CvPoint((int)(moments.m10()/moments.m00()), (int)(moments.m01()/moments.m00()));
     }
 
     public int getDepth(CvPoint point)

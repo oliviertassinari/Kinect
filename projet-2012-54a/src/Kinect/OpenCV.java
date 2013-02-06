@@ -19,9 +19,39 @@ import com.googlecode.javacv.cpp.opencv_core.IplImage;
 /**
  * Implémentation des fonctions d'OpenCV en java.
  */
-public class OpenCV2
+public class OpenCV
 {
-    public static void cv2CvtColor(IplImage src, IplImage dst, int code)
+    public static void cvThreshold(IplImage src, IplImage dst, double threshold, double maxValue, int thresholdType)
+    {
+    	if(thresholdType == CV_THRESH_BINARY_INV)
+    	{
+    		int width = src.width();
+    		int height = src.height();
+    		int pixelIndex;
+
+    		ByteBuffer srcBuffer = src.getByteBuffer();
+    		ByteBuffer dstBuffer = dst.getByteBuffer();
+
+    		for(int x = 0; x < width; x++)
+    		{
+    			for(int y = 0; y < height; y++)
+    			{
+    				pixelIndex = x + width*y;
+
+    				if(getUnsignedByte(srcBuffer, pixelIndex) > threshold)
+    				{
+    					dstBuffer.put(pixelIndex, (byte) maxValue);
+    				}
+    				else
+    				{
+        				dstBuffer.put(pixelIndex, (byte) 0);
+    				}
+    			}
+    		}
+    	}
+    }
+
+	public static void cvCvtColor(IplImage src, IplImage dst, int code)
     {
     	if(code == CV_RGB2GRAY)
     	{
@@ -42,8 +72,8 @@ public class OpenCV2
     		}
     	}
     }
-    
-    public static void cv2MinMaxLoc(IplImage src, double[] minVal, double[] maxVal, CvPoint minPoint, CvPoint maxPoint, IplImage mask)
+
+    public static void cvMinMaxLoc(IplImage src, double[] minVal, double[] maxVal, CvPoint minPoint, CvPoint maxPoint, IplImage mask)
     {
 		int width = src.width();
 		int height = src.height();
@@ -79,64 +109,8 @@ public class OpenCV2
     	maxPoint.x(maxPointX);
     	maxPoint.y(maxPointY);
     }
-    
-    public static void cv2Threshold(IplImage src, IplImage dst, double threshold, double maxValue, int thresholdType)
-    {
-    	if(thresholdType == CV_THRESH_BINARY)
-    	{
-    		int width = src.width();
-    		int height = src.height();
-    		int pixelIndex;
 
-    		ByteBuffer srcBuffer = src.getByteBuffer();
-    		ByteBuffer dstBuffer = dst.getByteBuffer();
-
-    		for(int x = 0; x < width; x++)
-    		{
-    			for(int y = 0; y < height; y++)
-    			{
-    				pixelIndex = x + width*y;
-
-    				if(getUnsignedByte(srcBuffer, pixelIndex) > threshold)
-    				{
-    					dstBuffer.put(pixelIndex, (byte) maxValue);
-    				}
-    				else
-    				{
-        				dstBuffer.put(pixelIndex, (byte) 0);
-    				}
-    			}
-    		}
-    	}
-    	else if(thresholdType == CV_THRESH_TOZERO)
-    	{
-    		int width = src.width();
-    		int height = src.height();
-    		int pixelIndex;
-
-    		ByteBuffer srcBuffer = src.getByteBuffer();
-    		ByteBuffer dstBuffer = dst.getByteBuffer();
-
-    		for(int x = 0; x < width; x++)
-    		{
-    			for(int y = 0; y < height; y++)
-    			{
-    				pixelIndex = x + width*y;
-
-    				if(getUnsignedByte(srcBuffer, pixelIndex) >= threshold)
-    				{
-    					dstBuffer.put(pixelIndex, (byte) getUnsignedByte(srcBuffer, pixelIndex));
-    				}
-    				else
-    				{
-        				dstBuffer.put(pixelIndex, (byte) 255);
-    				}
-    			}
-    		}
-    	}
-    }
-
-    public static void cv2Smooth(IplImage src, IplImage dst, int smoothtype, int param1, int param2, double param3, double param4)
+    public static void cvSmooth(IplImage src, IplImage dst, int smoothtype, int param1, int param2, double param3, double param4)
     {
     	if(smoothtype == CV_GAUSSIAN)
     	{
@@ -363,7 +337,7 @@ public class OpenCV2
 		}
     }
 
-	public static double cv2ContourArea(CvSeq contour, CvSlice slice, int mode)
+	public static double cvContourArea(CvSeq contour, CvSlice slice, int mode)
 	{
 		double area = 0;
 
@@ -396,26 +370,7 @@ public class OpenCV2
 		return (short) (bb.get(index) & 0xff);
     }
 
-    public static void cv2LUT(IplImage src, IplImage dst)
-    {
-		int width = src.width();
-		int height = src.height();
-		int pixelIndex;
-
-		ByteBuffer srcBuffer = src.getByteBuffer();
-		ByteBuffer dstBuffer = dst.getByteBuffer();
-    	
-		for(int x = 0; x < width; x++)
-		{
-			for(int y = 0; y < height; y++)
-			{
-				pixelIndex = x + width*y;
-				dstBuffer.put(pixelIndex, (byte)(255 - getUnsignedByte(srcBuffer, pixelIndex)));
-			}
-		}
-    }
-
-    public static void cv2DrawContours(IplImage src, CvSeq contour, CvScalar external_color, CvScalar hole_color,  int max_level,  int thickness, int lineType)
+    public static void cvDrawContours(IplImage src, CvSeq contour, CvScalar external_color, CvScalar hole_color,  int max_level,  int thickness, int lineType)
     {
 		CvPoint[] coordonne = new CvPoint[contour.total()];
 		int width = src.width();

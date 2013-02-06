@@ -20,17 +20,19 @@ import com.googlecode.javacv.cpp.opencv_core.CvSeq;
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 import com.googlecode.javacv.cpp.opencv_imgproc.CvConvexityDefect;
 
-public class Traitement implements Runnable
+public class Kinect implements Runnable
 {
 	private Thread runner;
- 
 	private MainPosition mainPositionLeft = new MainPosition(); 
 	private MainPosition mainPositionRight = new MainPosition();
 	private IplImage imageTraitement;
 	private long timeLastGrab;
 	private long[] timeList = new long[4];
+    private int ct1 = 0;
+    private int ct2 = 0;
+    private long timeOrigin = System.currentTimeMillis();
 
-	public Traitement()
+	public Kinect()
     {
 		runner = new Thread(this, "kinect");
 		runner.start();
@@ -356,10 +358,6 @@ public class Traitement implements Runnable
 
 		mainPosition.add(timeLastGrab, centerList.get(minLengthList[0]), getDepth(centerList.get(minLengthList[0])), 0);
     }
-
-    private int ct1 = 0;
-    private int ct2 = 0;
-    private long timeOrigin = System.currentTimeMillis();
 
     public void reconnaissanceDeMvt()
     {

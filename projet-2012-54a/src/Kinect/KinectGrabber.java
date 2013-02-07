@@ -17,7 +17,7 @@ import com.googlecode.javacv.cpp.opencv_core.IplImage;
 
 /**
  * Wrapper entre OpenNI et JavaCV.
- * Il permet de récupérer l image de profondeur de la kinect.
+ * Il permet de récupérer l'image de profondeur de la kinect.
 */
 public class KinectGrabber
 {
@@ -156,7 +156,7 @@ public class KinectGrabber
 
 		// Renormalisation
 		// equivalent de cvNormalize(src, dst, -8000, 65535, CV_MINMAX, null);
-		// et convertion en 8Bit
+		// et conversion en 8Bit
 		// equivalent de cvConvertScale(src, dst, 1/256.0, 0);
 		for(int x = 0; x < 640; x++)
 		{

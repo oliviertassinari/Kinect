@@ -80,22 +80,16 @@ public class Kinect implements Runnable
 
 			CvMemStorage storage = CvMemStorage.create();
 
-			// OpenCV.cv2Smooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 9, 9, 1, 0);
-			// OpenCV.cv2MinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
-			// OpenCV.cvThreshold(imageTraitement, imageThreshold, minVal[0] + 4*isFind, 255, CV_THRESH_BINARY_INV);
-			// contour = OpenCV.cv3FindContours(imageTraitement, storage, contour, Loader.sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
-			// OpenCV.cv2Threshold(imageTraitement, imageThreshold, minVal[0] + 4*isFind, 255, CV_THRESH_BINARY);
-			// double aire = OpenCV.cv2ContourArea(contour, CV_WHOLE_SEQ, 0);
-			// OpenCV.cv2DrawContours(imageDislay2, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
-
 			while((imageGrab = grabber.grab()) != null)
 			{
 				timeLastGrab = System.currentTimeMillis();
 
 				IplImage imageDislay2 = IplImage.create(width, height, IPL_DEPTH_8U, 3);
 				cvCvtColor(imageGrab, imageDislay2, CV_GRAY2RGB);
+				//OpenCV.cvCvtColor(imageGrab, imageDislay2, CV_GRAY2RGB);
 
-	        	cvMinMaxLoc(imageGrab, minVal, maxVal, minPoint, maxPoint, null);
+				cvMinMaxLoc(imageGrab, minVal, maxVal, minPoint, maxPoint, null);
+				//OpenCV.cvMinMaxLoc(imageGrab, minVal, maxVal, minPoint, maxPoint, null);
 	        	cvCircle(imageDislay2, minPoint, 3, CvScalar.YELLOW, -1, 8, 0);
 
 				imageTraitement = imageGrab.clone();
@@ -116,6 +110,7 @@ public class Kinect implements Runnable
 	        		int nbrFound = 0;
 
 		        	cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*nbrIteration, 255, CV_THRESH_BINARY_INV);
+		        	//OpenCV.cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*nbrIteration, 255, CV_THRESH_BINARY_INV);
 
 		        	CvSeq contour = new CvSeq();
 		         	cvFindContours(imageThreshold.clone(), storage, contour, Loader.sizeof(CvContour.class), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -147,10 +142,12 @@ public class Kinect implements Runnable
 	        	if(isFound)
 	        	{
 	        		cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*nbrIteration, 255, CV_THRESH_BINARY_INV);
+	        		//OpenCV.cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*nbrIteration, 255, CV_THRESH_BINARY_INV);
 	        	}
 	        	else
 	        	{
-	        		cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*firstFound, 255, CV_THRESH_BINARY_INV);
+	        		cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*nbrIteration, 255, CV_THRESH_BINARY_INV);
+	        		//OpenCV.cvThreshold(imageTraitement, imageThreshold, minVal[0] + 5*firstFound, 255, CV_THRESH_BINARY_INV);
 	        	}
 
 	        	CvSeq contour = new CvSeq();

@@ -60,7 +60,7 @@ public class reconnaissanceMvt
 	    				timeOrigin = timeLastGrab;
 	    				ct1 = 0;
 	    				ct2 = 0;
-	    				System.out.println("pause "+dz+" "+ (position[2] - positionCurrent[2]));
+	    				System.out.println(side+" pause "+dz+" "+ (position[2] - positionCurrent[2]));
 	    			}
 	    		}
 
@@ -78,7 +78,7 @@ public class reconnaissanceMvt
 	    				timeOrigin = timeLastGrab;
 	    				ct1 = 0;
 	    				ct2 = 0;
-	    				System.out.println("volume "+dy);
+	    				System.out.println(side+" volume "+dy);
 	    			}
 	    		}
     		}

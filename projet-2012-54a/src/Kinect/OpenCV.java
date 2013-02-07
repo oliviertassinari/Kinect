@@ -21,6 +21,12 @@ import com.googlecode.javacv.cpp.opencv_core.IplImage;
  */
 public class OpenCV
 {
+	/**
+	 * Converts image from one color space to another
+	 * @param src The source 8-bit
+	 * @param dst The destination image
+	 * @param code Color conversion operation
+	 */
 	public static void cvCvtColor(IplImage src, IplImage dst, int code)
     {
     	if(code == CV_RGB2GRAY)
@@ -65,6 +71,15 @@ public class OpenCV
     	}
     }
 
+	/**
+	 * Finds global minimum and maximum in array or subarray
+	 * @param src The source array
+	 * @param minVal return minimum value
+	 * @param maxVal return maximum value
+	 * @param minPoint return minimum location
+	 * @param maxPoint returned maximum location
+	 * @param mask The optional mask that is used to select a subarray
+	 */
     public static void cvMinMaxLoc(IplImage src, double[] minVal, double[] maxVal, CvPoint minPoint, CvPoint maxPoint, IplImage mask)
     {
 		int width = src.width();
@@ -74,7 +89,7 @@ public class OpenCV
 		int value;
 		minVal[0] = 255;
 		maxVal[0] = 0;
-		
+
 		for(int x = 0; x < width; x++)
 		{
 			for(int y = 0; y < height; y++)
@@ -102,6 +117,14 @@ public class OpenCV
     	maxPoint.y(maxPointY);
     }
 
+    /**
+     * Applies fixed-level threshold to array elements
+     * @param src Source array
+     * @param dst Destination array
+     * @param threshold Threshold value
+     * @param maxValue Maximum value
+     * @param thresholdType Thresholding type
+     */
 	public static void cvThreshold(IplImage src, IplImage dst, double threshold, double maxValue, int thresholdType)
     {
     	if(thresholdType == CV_THRESH_BINARY_INV)

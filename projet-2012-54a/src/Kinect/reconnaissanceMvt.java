@@ -1,6 +1,8 @@
 package Kinect;
 
-
+/**
+ * Implémentation de la reconnaissance de mouvements
+ */
 public class reconnaissanceMvt
 {
 	private MainPosition mainPosition;

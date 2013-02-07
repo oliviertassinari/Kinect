@@ -1,4 +1,4 @@
 kinect
 ======
 
-Kinect processing
+Kinect processing : http://www.youtube.com/watch?v=TrKTeonYYio

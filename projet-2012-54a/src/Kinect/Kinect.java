@@ -10,6 +10,7 @@ import javax.swing.JFrame;
 
 import com.googlecode.javacpp.Loader;
 import com.googlecode.javacv.CanvasFrame;
+import com.googlecode.javacv.OpenCVFrameGrabber;
 import com.googlecode.javacv.cpp.opencv_core.CvBox2D;
 import com.googlecode.javacv.cpp.opencv_core.CvContour;
 import com.googlecode.javacv.cpp.opencv_core.CvFont;
@@ -48,6 +49,7 @@ public class Kinect implements Runnable
 	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test2.mpg");
 	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact42_test1.mkv");
 	    	//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber("video/depth_pact54_test2.mkv");
+			//OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(0);
 	        KinectGrabber grabber = new KinectGrabber();
 
 			grabber.start();
@@ -83,16 +85,22 @@ public class Kinect implements Runnable
 			while((imageGrab = grabber.grab()) != null)
 			{
 				timeLastGrab = System.currentTimeMillis();
+/*
+				imageTraitement = IplImage.create(width, height, IPL_DEPTH_8U, 1);
+				cvCvtColor(imageGrab, imageTraitement, CV_RGB2GRAY);
 
+				IplImage imageDislay2 = imageGrab.clone();
+*/
+				
 				IplImage imageDislay2 = IplImage.create(width, height, IPL_DEPTH_8U, 3);
 				cvCvtColor(imageGrab, imageDislay2, CV_GRAY2RGB);
 				//OpenCV.cvCvtColor(imageGrab, imageDislay2, CV_GRAY2RGB);
 
-				cvMinMaxLoc(imageGrab, minVal, maxVal, minPoint, maxPoint, null);
+				imageTraitement = imageGrab.clone();
+
+				cvMinMaxLoc(imageTraitement, minVal, maxVal, minPoint, maxPoint, null);
 				//OpenCV.cvMinMaxLoc(imageGrab, minVal, maxVal, minPoint, maxPoint, null);
 	        	cvCircle(imageDislay2, minPoint, 3, CvScalar.YELLOW, -1, 8, 0);
-
-				imageTraitement = imageGrab.clone();
 
 	        	cvSmooth(imageTraitement, imageTraitement, CV_GAUSSIAN, 7, 7, 0, 0);
 
@@ -175,25 +183,84 @@ public class Kinect implements Runnable
 	                		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
 	                		CvSeq defect = cvConvexityDefects(contour, hull, storage);
 
+	                		ArrayList<CvPoint> tipList = new ArrayList<CvPoint>();
+
 	                		while(defect != null)
 	                		{
 	                    		for(int i = 0; i < defect.total(); i++)
 	                    		{
-	                    			 CvConvexityDefect convexityDefect = new CvConvexityDefect(cvGetSeqElem(defect, i));
+									CvConvexityDefect convexityDefect = new CvConvexityDefect(cvGetSeqElem(defect, i));
 
-	                    			 if(convexityDefect.depth() > 10)
-	                    			 {
-		                    			 cvCircle(imageDislay2, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
-		                    			 cvCircle(imageDislay2, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
-		                    			 cvCircle(imageDislay2, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
+									if(convexityDefect.depth() > 10)
+									{
+										if(tipList.size() > 1)
+										{
+											if(getLenght(convexityDefect.start(), tipList.get(tipList.size()-1)) > 10)
+											{
+												tipList.add(convexityDefect.start());
+											}
+										}
+										else
+										{
+											tipList.add(convexityDefect.start());
+										}
 
-		                    			 //System.out.println(convexityDefect.depth());
-	                    			 }
+										tipList.add(convexityDefect.depth_point());
+										
+										if(getLenght(convexityDefect.end(), tipList.get(0)) > 17)
+										{							
+											tipList.add(convexityDefect.end());
+										}
+
+										CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.5, 1); 
+										cvPutText(imageDislay2, Integer.toString(i), convexityDefect.start(), font, CvScalar.MAGENTA);
+
+										cvCircle(imageDislay2, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
+										cvCircle(imageDislay2, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
+										cvCircle(imageDislay2, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
+
+										//System.out.println(convexityDefect.depth());
+									}
 	                    		}
 
 	                		    defect = defect.h_next();
 	                		}
+/*
+	                		if(tipList.size() > 2)
+	                		{
+		                		for(int i = 0; i < tipList.size(); i++)
+		                		{
+									CvPoint point = tipList.get(i);
+									CvPoint next;
+									CvPoint prev;
+									
+									if(i > 0)
+									{
+										prev = tipList.get(i-1);
+									}
+									else
+									{
+										prev = tipList.get(tipList.size()-1);
+									}
 
+									if(i < tipList.size()-1)
+									{
+										next = tipList.get(i+1);
+									}
+									else
+									{
+										next = tipList.get(0);
+									}
+
+									if(getAngle(prev, point, next) < 45)
+									{
+										CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.5, 1); 
+										cvPutText(imageDislay2, Integer.toString(i), point, font, CvScalar.MAGENTA);
+			                			cvCircle(imageDislay2, point, 3, CvScalar.MAGENTA, -1, 8, 0);
+									}
+		                		}
+	                		}
+*/
 	                		centerList.add(centre);
 	                 	}
 	                }
@@ -418,6 +485,11 @@ public class Kinect implements Runnable
     	return Math.sqrt(((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2)));
     }
 
+    public double getLenght(CvPoint point1, CvPoint point2)
+    {
+    	return getLenght(point1.x(), point1.y(), point2.x(), point2.y());
+    }
+
     public int[] getMinList(double[] list)
     {
     	double min = list[0];
@@ -436,4 +508,28 @@ public class Kinect implements Runnable
 
     	return r;
     }
+    
+	public int angleBetween(CvPoint tip, CvPoint next, CvPoint prev)
+	{
+		return (int)Math.round(
+		             Math.toDegrees(
+		                   Math.atan2(next.x() - tip.x(), next.y() - tip.y()) -
+		                   Math.atan2(prev.x() - tip.x(), prev.y() - tip.y())) );
+	}
+	
+	public int getAngle(CvPoint p1, CvPoint p2, CvPoint p3)
+	{
+		double alpha = Math.atan2(p1.y() - p2.y(), p1.x() - p2.x());
+		double beta = Math.atan2(p3.y() - p2.y(), p3.x() - p2.x());
+		double angle = (beta - alpha);
+
+		//Correction de l'angle pour le restituer entre 0 et 2PI
+		while (angle < 0.0 || angle > 2 * Math.PI)
+		{
+			if (angle < 0.0) angle += 2 * Math.PI;
+			else if (angle > 2 * Math.PI) angle -= 2 * Math.PI;
+		}
+
+		return (int)(Math.round(Math.toDegrees(angle)));
+	}
 }

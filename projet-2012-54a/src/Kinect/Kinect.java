@@ -172,7 +172,7 @@ public class Kinect implements Runnable
 	                		//cvDrawContours(imageDislay2, contour, CvScalar.BLUE, CvScalar.BLUE, -1, 1, CV_AA);
 
 	                	    CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.002, 0);
-	                		cvDrawContours(imageDislay2, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
+	                		//cvDrawContours(imageDislay2, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
 
 	                		CvPoint centre = getContourCenter3(points, storage);
 	                		cvCircle(imageDislay2, centre, 3, CvScalar.RED, -1, 8, 0);
@@ -238,11 +238,14 @@ public class Kinect implements Runnable
 
 	public void getFingers(CvSeq contour, CvMemStorage storage, IplImage imageDislay2)
 	{
-		CvSeq convex = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 1);
+		CvSeq points = cvApproxPoly(contour, Loader.sizeof(CvContour.class), storage, CV_POLY_APPROX_DP, cvContourPerimeter(contour)*0.005, 0);
+		cvDrawContours(imageDislay2, points, CvScalar.GREEN, CvScalar.GREEN, -1, 1, CV_AA);
+
+		CvSeq convex = cvConvexHull2(points, storage, CV_COUNTER_CLOCKWISE, 1);
 		cvDrawContours(imageDislay2, convex, CvScalar.RED, CvScalar.RED, -1, 1, CV_AA);
 
-		CvSeq hull = cvConvexHull2(contour, storage, CV_COUNTER_CLOCKWISE, 0);
-		CvSeq defect = cvConvexityDefects(contour, hull, storage);
+		CvSeq hull = cvConvexHull2(points, storage, CV_COUNTER_CLOCKWISE, 0);
+		CvSeq defect = cvConvexityDefects(points, hull, storage);
 
 		while(defect != null)
 		{

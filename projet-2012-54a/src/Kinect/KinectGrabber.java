@@ -100,8 +100,13 @@ public class KinectGrabber
 		IplImage dst = IplImage.create(640, 480, IPL_DEPTH_8U, 1);
 		ByteBuffer dstByteBuffer = dst.getByteBuffer();
 
+		/* pour avoir tout le champ de vision
 		int c1 = 65535;
 		int c2 = -8000;
+		 * */
+
+		int c1 = 65535;
+		int c2 = -12000;
 
 		//Calcule de max et min
 		if(scaleI > 10)

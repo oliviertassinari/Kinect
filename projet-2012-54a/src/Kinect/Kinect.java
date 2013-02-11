@@ -247,6 +247,9 @@ public class Kinect implements Runnable
 		CvSeq hull = cvConvexHull2(points, storage, CV_COUNTER_CLOCKWISE, 0);
 		CvSeq defect = cvConvexityDefects(points, hull, storage);
 
+		ArrayList<CvPoint> fingersList = new ArrayList<CvPoint>();
+		ArrayList<CvPoint> fingersList2 = new ArrayList<CvPoint>();
+
 		while(defect != null)
 		{
     		for(int i = 0; i < defect.total(); i++)
@@ -255,18 +258,35 @@ public class Kinect implements Runnable
 
 				if(convexityDefect.depth() > 10)
 				{
-					CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.5, 1); 
-					cvPutText(imageDislay2, Integer.toString(i), convexityDefect.start(), font, CvScalar.MAGENTA);
+					if(getAngle(convexityDefect.depth_point(), convexityDefect.start(), convexityDefect.end()) < 100)
+					{
+						CvFont font = new CvFont(CV_FONT_HERSHEY_COMPLEX, 0.5, 1); 
+						cvPutText(imageDislay2, Integer.toString(i), convexityDefect.start(), font, CvScalar.MAGENTA);
 
-					cvCircle(imageDislay2, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
-					cvCircle(imageDislay2, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
-					cvCircle(imageDislay2, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
+						cvCircle(imageDislay2, convexityDefect.start(), 3, CvScalar.MAGENTA, -1, 8, 0);
+						cvCircle(imageDislay2, convexityDefect.depth_point(), 3, CvScalar.WHITE, -1, 8, 0);
+						cvCircle(imageDislay2, convexityDefect.end(), 3, CvScalar.CYAN, -1, 8, 0);
 
-					//System.out.println(convexityDefect.depth());
+						fingersList.add(convexityDefect.start());
+						fingersList.add(convexityDefect.end());
+					}
 				}
     		}
 
 		    defect = defect.h_next();
+		}
+
+		for(int i = 0; i < fingersList.size(); i++)
+		{
+			if(i < fingersList.size() - 1)
+			{
+				if(getLenght(fingersList.get(i), fingersList.get(i+1)) > 10)
+				{
+					i++;
+				}
+			}
+
+			fingersList2.add(fingersList.get(i));
 		}
 	}
 	
@@ -290,7 +310,7 @@ public class Kinect implements Runnable
 						addToClotherHand(centerList, centreRight, mainPositionRight);
 					}	
        			}
-				else if(centerList.size() >= 2) //On réinitialise les positions
+				else if(centerList.size() >= 2) //On rï¿½initialise les positions
 				{
 					mainPositionLeft.reset();
 					mainPositionRight.reset();

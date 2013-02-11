@@ -9,6 +9,7 @@ public class reconnaissanceMvt
 	private String side;
     private int ct1;
     private int ct2;
+    private int ct3;
     private long timeOrigin;
 
     public reconnaissanceMvt(MainPosition mainPosition, String side)
@@ -17,6 +18,7 @@ public class reconnaissanceMvt
     	this.side = side;
     	ct1 = 0;
     	ct2 = 0;
+    	ct3 = 0;
     	timeOrigin = System.currentTimeMillis();
     }
 
@@ -48,6 +50,15 @@ public class reconnaissanceMvt
 	    			ct2 = 0;
 	    		}
 
+    			if(Math.abs(position[1]-positionCurrent[1]) < 40 && Math.abs(position[2]-positionCurrent[2]) < 40) //stable en y, z
+    			{
+    				ct3 += 1;
+    			}
+	    		else
+	    		{
+	    			ct3 = 0;
+	    		}
+
 	    		if(ct1 > 20)
 	    		{
 	    			float dz = 0;
@@ -62,6 +73,7 @@ public class reconnaissanceMvt
 	    				timeOrigin = timeLastGrab;
 	    				ct1 = 0;
 	    				ct2 = 0;
+	    				ct3 = 0 ;
 	    				System.out.println(side+" pause "+dz+" "+ (position[2] - positionCurrent[2]));
 	    			}
 	    		}
@@ -72,7 +84,7 @@ public class reconnaissanceMvt
 
 	    			for(int j = 0; j <= i; j++)
 	    			{
-	    				dy += mainPosition.getDerivee(j)[1];
+	    				dy += mainPosition.getDerivee(j)[1]; //y
 	    			}
 
 	    			if(Math.abs(dy) > 3)
@@ -80,7 +92,27 @@ public class reconnaissanceMvt
 	    				timeOrigin = timeLastGrab;
 	    				ct1 = 0;
 	    				ct2 = 0;
+	    				ct3 = 0;
 	    				System.out.println(side+" volume "+dy);
+	    			}
+	    		}
+
+	    		if(ct3 > 20)
+	    		{
+	    			float dx = 0;
+
+	    			for(int j = 0; j <= i; j++)
+	    			{
+	    				dx += mainPosition.getDerivee(j)[0]; //x
+	    			}
+
+	    			if(( dx > 3 && side == "right") || ( dx < -3 && side == "left" ))
+	    			{
+	    				timeOrigin = timeLastGrab;
+	    				ct1 = 0;
+	    				ct2 = 0;
+	    				ct3 = 0;
+	    				System.out.println(side+" crossfinder"+dx);
 	    			}
 	    		}
     		}
@@ -91,3 +123,4 @@ public class reconnaissanceMvt
     	}
     }
 }
+

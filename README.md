@@ -1,4 +1,4 @@
-kinect
+Kinect
 ======
 
-Kinect processing : http://www.youtube.com/watch?v=TrKTeonYYio
+Kinect processing: http://www.youtube.com/watch?v=TrKTeonYYio
